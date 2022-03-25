@@ -1,2 +1,2 @@
-# game_stuff_library
-This is a little Pygame enhancing library i am writing and updating.
+# SPNVA
+This is a Pygame enhancing library wihch includes Vector, Curve and sub menus for now.
