@@ -1,3 +1,6 @@
+import pygame
+from .vector import Vector
+
 class Player:
     def __init__(self, win, pos: Vector, size: Vector, vel, img='', color=(255, 0, 0)):
         self.win = win
