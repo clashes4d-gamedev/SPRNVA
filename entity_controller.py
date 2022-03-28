@@ -30,25 +30,25 @@ class Player:
 
     def move(self, tiles, x=False, y=False, minus_y=False, minus_x=False):
         if self.vel >= 0:
-            if x is not False and (self.collider.x + self.collider.width) != self.win.get_width():
+            if x is not False and (self.collider.x + self.collider.width) <= self.win.get_width():
                 self.collider.x += self.vel
                 collisions = self.check_collisions(tiles)
                 for tile in collisions:
                     self.collider.right = tile.left
 
-            elif y is not False and (self.collider.y + self.collider.height) != self.win.get_height():
+            elif y is not False and (self.collider.y + self.collider.height) <= self.win.get_height():
                 self.collider.y += self.vel
                 collisions = self.check_collisions(tiles)
                 for tile in collisions:
                     self.collider.bottom = tile.top
 
-            elif minus_x is not False and self.collider.x != 0:
+            elif minus_x is not False and self.collider.x >= 0:
                 self.collider.x -= self.vel
                 collisions = self.check_collisions(tiles)
                 for tile in collisions:
                     self.collider.left = tile.right
 
-            elif minus_y is not False and self.collider.y != 0:
+            elif minus_y is not False and self.collider.y >= 0:
                 self.collider.y -= self.vel
                 collisions = self.check_collisions(tiles)
                 for tile in collisions:
