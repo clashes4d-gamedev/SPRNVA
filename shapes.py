@@ -2,6 +2,16 @@ import pygame
 from pygame import gfxdraw
 from .vector import Vector
 
+class Transform:
+    def __init__(self):
+        pass
+
+    def rotate_pivot(self, surf: pygame.Surface, angle: float, pivot: Vector):
+        rot_img = pygame.transform.rotate(surf, angle)
+        rot_img_rect = rot_img.get_rect()
+        rot_img_rect.center = (pivot.x, pivot.y)
+        return rot_img, rot_img_rect
+
 class Draw:
     def __init__(self, win: pygame.Surface):
         self.win = win

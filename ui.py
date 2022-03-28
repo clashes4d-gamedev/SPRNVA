@@ -9,7 +9,7 @@ class TextRenderer:
         text_dim = txt.size(text)
         win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
 
-class Button():
+class Button:
     def __init__(self, win, x, y, width, height, mouse, mouse_btns, btn, img_path='', btn_color=(255,255,255), btn_txt_color=(0,0,0), btn_txt_size=10, btn_font='Arial', btn_text='BTN'):
         self.win = win
         self.x = x
@@ -79,3 +79,15 @@ class SubMenu:
             return button_dir
         else:
             pass
+
+def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
+    """Draws a Vignette around the given coordinates.
+       Returns a pygame Surface with the Vignette."""
+    vignetten_surf = pygame.Surface((win.get_width(), win.get_height()))
+    vignetten_surf.set_colorkey((255, 255, 255))
+    vignetten_surf.set_alpha(alpha)
+    vignetten_surf.fill(color)
+    vignetten_rect = vignetten_surf.get_rect()
+    vignetten_rect = pygame.Rect(vignetten_rect.x - (offset*8), vignetten_rect.y + offset*.03125, vignetten_rect.width + (offset*16), vignetten_rect.height - offset*.0625)
+    pygame.draw.ellipse(vignetten_surf, (255, 255, 255), vignetten_rect)
+    return vignetten_surf
