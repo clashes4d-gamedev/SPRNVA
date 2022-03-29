@@ -1,5 +1,6 @@
 import pygame
 import math
+from .vector import Vector
 
 class TextRenderer:
     def __init__(self, win, x, y, text, font, size, color):
@@ -79,6 +80,54 @@ class SubMenu:
             return button_dir
         else:
             pass
+
+class InputBox:
+    def __init__(self, win: pygame.Surface, pos: Vector, size: Vector, border_thickness=3):
+        self.win = win
+        self.pos = pos
+        self.size = size
+        self.collider = pygame.Rect(self.pos.x, self.pos.y, self.size.x, self.size.y)
+        self.border = 1
+        self.border_thickness = border_thickness
+        self.focused = False
+        self.value = ''
+        self.surf = pygame.Surface((self.collider.width, self.collider.height))
+
+    def update(self, m_btn: tuple):
+        mouse = pygame.mouse.get_pos()
+        if self.collider.collidepoint(mouse[0], mouse[1]):
+            if pygame.mouse.get_pressed() == m_btn:
+                self.border = self.border_thickness
+                self.focused = True
+        else:
+            if True in pygame.mouse.get_pressed():
+                self.focused = False
+
+    def get_input(self, event):
+        if self.focused:
+            if event.type == pygame.KEYDOWN:
+                if event.key != pygame.K_BACKSPACE and event.key != pygame.K_RETURN and event.key != pygame:
+                    self.value += event.unicode
+
+                elif event.key == pygame.K_BACKSPACE and self.value != '':
+                    self.value = self.value[:-1]
+
+                elif event.key == pygame.K_RETURN:
+                    self.focused = False
+        else:
+            pass
+
+    def draw(self, text_color=(255, 255, 255), color=(64, 64, 64), border_color=(20, 95, 255), border_radius=5):
+        pygame.draw.rect(self.surf, color, (0, 0, self.collider.width, self.collider.height), border_radius=border_radius)
+        if self.focused:
+            pygame.draw.rect(self.surf, border_color, (0, 0, self.collider.width, self.collider.height), width=self.border, border_radius=border_radius)
+
+        TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.value, 'Arial', self.collider.height - 5, text_color)
+        self.win.blit(self.surf, (self.pos.x, self.pos.y))
+
+    def get_value(self):
+        return self.value
+
 
 def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
     """Draws a Vignette around the given coordinates.
