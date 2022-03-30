@@ -2,6 +2,8 @@ import pygame
 import math
 from .vector import Vector
 
+SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu]
+
 class TextRenderer:
     def __init__(self, win, x, y, text, font, size, color):
         pygame.font.init()
