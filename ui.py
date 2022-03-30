@@ -1,8 +1,7 @@
 import pygame
 import math
+import keyboard
 from .vector import Vector
-
-SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu]
 
 class TextRenderer:
     def __init__(self, win, x, y, text, font, size, color):
@@ -12,6 +11,7 @@ class TextRenderer:
         text_dim = txt.size(text)
         win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
 
+#TODO Rewrite and Optimize this
 class Button:
     def __init__(self, win, x, y, width, height, mouse, mouse_btns, btn, img_path='', btn_color=(255,255,255), btn_txt_color=(0,0,0), btn_txt_size=10, btn_font='Arial', btn_text='BTN'):
         self.win = win
@@ -39,9 +39,8 @@ class Button:
             self.button_surf.blit(button_img, (0,0))
         else:
             self.button_surf.fill(self.btn_color)
-            TextRenderer(self.button_surf, self.button_surf.get_width()/2, self.button_surf.get_height()/2, self.btn_font, self.btn_txt_size, self.btn_txt_color, self.btn_text)
+            TextRenderer(self.button_surf, self.button_surf.get_width()/2, self.button_surf.get_height()/2, self.btn_text, self.btn_font, self.btn_txt_size, self.btn_txt_color)
         self.win.blit(self.button_surf, (self.button_collider.x, self.button_collider.y))
-        pygame.draw.rect(self.win, (128,128,128), (self.x, self.y, self.width, self.height), width=1)
 
         if pygame.Rect.collidepoint(self.button_collider, self.mouse[0], self.mouse[1]):
             if self.mouse_btns[self.btn]:
@@ -95,8 +94,12 @@ class InputBox:
         self.value = ''
         self.surf = pygame.Surface((self.collider.width, self.collider.height))
 
-    def update(self, m_btn: tuple):
-        mouse = pygame.mouse.get_pos()
+    def update(self, m_btn: tuple, mouse=(0,0)):
+        if mouse == (0,0):
+            mouse = pygame.mouse.get_pos()
+        else:
+            pass
+
         if self.collider.collidepoint(mouse[0], mouse[1]):
             if pygame.mouse.get_pressed() == m_btn:
                 self.border = self.border_thickness
@@ -105,17 +108,19 @@ class InputBox:
             if True in pygame.mouse.get_pressed():
                 self.focused = False
 
-    def get_input(self, event):
+    def get_input(self, events):
+        """Call this before the event loop."""
         if self.focused:
-            if event.type == pygame.KEYDOWN:
-                if event.key != pygame.K_BACKSPACE and event.key != pygame.K_RETURN and event.key != pygame:
-                    self.value += event.unicode
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key != pygame.K_BACKSPACE and event.key != pygame.K_RETURN and event.key != pygame:
+                        self.value += event.unicode
 
-                elif event.key == pygame.K_BACKSPACE and self.value != '':
-                    self.value = self.value[:-1]
+                    elif event.key == pygame.K_BACKSPACE and self.value != '':
+                        self.value = self.value[:-1]
 
-                elif event.key == pygame.K_RETURN:
-                    self.focused = False
+                    elif event.key == pygame.K_RETURN:
+                        self.focused = False
         else:
             pass
 
@@ -125,7 +130,7 @@ class InputBox:
             pygame.draw.rect(self.surf, border_color, (0, 0, self.collider.width, self.collider.height), width=self.border, border_radius=border_radius)
 
         TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.value, 'Arial', self.collider.height - 5, text_color)
-        self.win.blit(self.surf, (self.pos.x, self.pos.y))
+        self.win.blit(self.surf, (self.collider.x, self.collider.y))
 
     def get_value(self):
         return self.value
@@ -142,3 +147,5 @@ def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
     vignetten_rect = pygame.Rect(vignetten_rect.x - (offset*8), vignetten_rect.y + offset*.03125, vignetten_rect.width + (offset*16), vignetten_rect.height - offset*.0625)
     pygame.draw.ellipse(vignetten_surf, (255, 255, 255), vignetten_rect)
     return vignetten_surf
+
+SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox]
