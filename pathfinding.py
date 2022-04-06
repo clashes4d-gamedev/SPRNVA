@@ -2,7 +2,7 @@ import pygame
 from .vector import Vector
 
 class Node:
-    def __init__(self, index: int, pos:Vector):
+    def __init__(self, index: int, pos: Vector):
         self.index = index
         self.x = pos.x
         self.y = pos.y

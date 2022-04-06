@@ -27,29 +27,29 @@ class Player:
                 collisions.append(tile)
         return collisions
 
-    def move(self, tiles, vel, x=False, y=False, minus_y=False, minus_x=False, boundaries=True):
+    def move(self, tiles, vel:Vector, dt:float, x=False, y=False, minus_y=False, minus_x=False, boundaries=True):
         if vel >= 0:
             if boundaries:
                 if x is not False and (self.collider.x + self.collider.width) <= self.win.get_width():
-                    self.collider.x += vel.x
+                    self.collider.x += vel.x * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.right = tile.left
 
                 elif y is not False and (self.collider.y + self.collider.height) <= self.win.get_height():
-                    self.collider.y += vel.y
+                    self.collider.y += vel.y * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.bottom = tile.top
 
                 elif minus_x is not False and self.collider.x >= 0:
-                    self.collider.x -= vel.x
+                    self.collider.x -= vel.x * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.left = tile.right
 
                 elif minus_y is not False and self.collider.y >= 0:
-                    self.collider.y -= vel.y
+                    self.collider.y -= vel.y * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.top = tile.bottom
@@ -58,25 +58,25 @@ class Player:
                     return
             else:
                 if x is not False:
-                    self.collider.x += vel.x
+                    self.collider.x += vel.x * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.right = tile.left
 
                 elif y is not False:
-                    self.collider.y += vel.y
+                    self.collider.y += vel.y * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.bottom = tile.top
 
                 elif minus_x is not False:
-                    self.collider.x -= vel.x
+                    self.collider.x -= vel.x * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.left = tile.right
 
                 elif minus_y is not False:
-                    self.collider.y -= vel.y
+                    self.collider.y -= vel.y * dt
                     collisions = self.check_collisions(tiles)
                     for tile in collisions:
                         self.collider.top = tile.bottom

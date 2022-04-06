@@ -1,3 +1,5 @@
+import pygame
+from PIL import Image, ImageOps, ImageDraw
 def crop_circle(img_path):
     img = Image.open(img_path)
     h, w = img.size

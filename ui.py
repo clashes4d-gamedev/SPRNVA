@@ -52,7 +52,7 @@ class Button:
 
 
 class SubMenu:
-    def __init__(self, win, x:int, y:int, width:int, options:list, color:tuple, button_height=20) -> None:
+    def __init__(self, win, x: int, y: int, width: int, options: list, color: tuple, button_height=20) -> None:
         self.win = win
         self.x = x
         self.y = y
@@ -87,15 +87,16 @@ class InputBox:
         self.win = win
         self.pos = pos
         self.size = size
-        self.collider = pygame.Rect(self.pos.x, self.pos.y, self.size.x, self.size.y)
+        #self.collider = pygame.Rect(self.pos.x, self.pos.y, self.size.x, self.size.y)
         self.border = 1
         self.border_thickness = border_thickness
         self.focused = False
         self.value = ''
-        self.surf = pygame.Surface((self.collider.width, self.collider.height))
+        self.surf = pygame.Surface((self.size.x, self.size.y))
+        self.collider = self.surf.get_rect(topleft=(self.pos.x, self.pos.y))
 
     def update(self, m_btn: tuple, mouse=(0,0)):
-        if mouse == (0,0):
+        if mouse == (0, 0):
             mouse = pygame.mouse.get_pos()
         else:
             pass

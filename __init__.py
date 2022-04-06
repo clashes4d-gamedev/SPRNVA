@@ -5,6 +5,6 @@ from .objects import *
 from .entity_controller import *
 from .spritesheetstuff import *
 from .image import *
-from .pathfinding import *
+#from .pathfinding import *
 from .shapes import *
 from .logic import *
