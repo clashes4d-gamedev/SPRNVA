@@ -1,7 +1,9 @@
 import pygame
 import math
 import keyboard
+import xerox
 from .vector import Vector
+from pygame.locals import *
 
 class TextRenderer:
     def __init__(self, win, x, y, text, font, size, color):
@@ -114,7 +116,7 @@ class InputBox:
         if self.focused:
             for event in events:
                 if event.type == pygame.KEYDOWN:
-                    if event.key != pygame.K_BACKSPACE and event.key != pygame.K_RETURN and event.key != pygame:
+                    if event.key != pygame.K_BACKSPACE and event.key != pygame.K_RETURN and event.key != pygame.K_ESCAPE:
                         self.value += event.unicode
 
                     elif event.key == pygame.K_BACKSPACE and self.value != '':

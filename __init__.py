@@ -8,3 +8,4 @@ from .image import *
 #from .pathfinding import *
 from .shapes import *
 from .logic import *
+from .color_classification import *
