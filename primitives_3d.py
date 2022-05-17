@@ -1,4 +1,4 @@
-from lib_3d import *
+from .lib_3d import *
 class Cube:
     def __init__(self, vert_radius=5, nodecolor=(255, 255, 255), edgecolor=(64, 64, 64), show_vets=False, show_edges=True):
         self.data = Wireframe()

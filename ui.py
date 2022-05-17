@@ -1,7 +1,6 @@
 import pygame
 import math
 import keyboard
-import xerox
 from .vector import Vector
 from pygame.locals import *
 
