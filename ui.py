@@ -2,6 +2,7 @@ import pygame
 import math
 import keyboard
 from .vector import Vector
+from .logic import *
 from pygame.locals import *
 
 class TextRenderer:
@@ -11,6 +12,7 @@ class TextRenderer:
         txt_surf = txt.render(text, False, color)
         text_dim = txt.size(text)
         win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
+        self.size = (txt_surf.get_width(), txt_surf.get_height())
 
 #TODO Rewrite and Optimize this
 class Button:
@@ -136,6 +138,61 @@ class InputBox:
 
     def get_value(self):
         return self.value
+
+class Card:
+    def __init__(self, win, x, y, width, height, bg_color, rounded_corners=False, title_image=''):
+        self.win = win
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.collider = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.card_surf = pygame.Surface((self.collider.width, self.collider.height), pygame.SRCALPHA)
+        self.bg_color = bg_color
+        self.rounded_corners = rounded_corners
+        self.border_radius = 10
+
+        self.title_image = title_image
+        self.got_title_img = False
+
+        if self.title_image != '' and CheckPath(self.title_image).existance() and CheckPath(self.title_image).isfile():
+            self.title_image = pygame.image.load(self.title_image).convert_alpha()
+            self.title_image = pygame.transform.scale(self.title_image, (self.collider.width, self.collider.height/3))
+            self.got_title_img = True
+
+        self.font = 'Arial'
+        self.text_color = (255, 255, 255)
+        self.content_font_size = 10
+        self.title_font_size = 20
+        self.title = 'Title'
+        self.content = ['This is some ordinary',
+                        'card content to',              # This is like a really stupid way to do word wrapping but it works for now
+                        'test if the card',
+                        'supports word-wraoping.']
+        self.content_surf = pygame.Surface((self.collider.width, self.collider.height * 2/3), pygame.SRCALPHA)
+        self.content_surf_color = self.bg_color
+
+    def draw(self):
+        if self.rounded_corners:
+            pygame.draw.rect(self.card_surf, self.bg_color, (0, 0, self.collider.width, self.collider.height), border_radius=self.border_radius)
+        else:
+            pygame.draw.rect(self.card_surf, self.bg_color, (0, 0, self.collider.width, self.collider.height))
+
+        if self.got_title_img:
+            self.card_surf.blit(self.title_image, (0, 0), special_flags=pygame.BLEND_ADD)
+
+        # Begin Drawing the content
+        # Displaying the title
+        TextRenderer(self.content_surf, self.content_surf.get_width()/2, self.content_surf.get_height() * 1/4, self.title, self.font, self.title_font_size, self.text_color)
+
+        # Displaying the actual text is a bit more difficult because i have to implement word-wrapping somehow
+        x, y = 0, self.content_surf.get_height() * 2 / 4
+        for line in self.content:
+            TextRenderer(self.content_surf, self.content_surf.get_width() / 2, y, line, self.font, self.content_font_size, self.text_color)
+            y += 10
+
+        self.card_surf.blit(self.content_surf, (0, self.collider.height/3), special_flags=pygame.BLEND_ALPHA_SDL2)
+        self.win.blit(self.card_surf, (self.collider.x, self.collider.y))
 
 
 def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
