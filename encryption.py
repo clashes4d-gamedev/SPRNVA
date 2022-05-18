@@ -1,9 +1,13 @@
 import random
+import hashlib
+import string
+from binascii import hexlify
 from math import lcm, gcd
 
 # ok this is fast
 class RSA:
     def rabinMiller(self, num):
+        """Rabin-Miller primality test."""
         s = num - 1
         t = 0
 
@@ -24,6 +28,7 @@ class RSA:
             return True
 
     def is_prime(self, num):
+        """Checks if a number is a Primenumber using the Rabin-Miller primality test."""
         lowPrimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
                     67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151,
                     157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241,
@@ -43,6 +48,7 @@ class RSA:
         return self.rabinMiller(num)
 
     def get_primes(self, bits=1024):
+        """Gets two random prime numbers with the specifies bit length."""
         while True:
             p = random.getrandbits(bits)
             if self.is_prime(p):
@@ -59,11 +65,11 @@ class RSA:
 
         return p, q
 
-    def generate_rsa_keys(self):
-        p, q = self.get_primes()
+    def generate_rsa_keys(self, e=65537, bits=1024):
+        """Generates public and private keys for RSA."""
+        p, q = self.get_primes(bits=bits)
         n = p * q
         lambda_n = lcm(p - 1, q - 1)
-        e = 65537
         d = pow(e, -1, lambda_n)
 
         public_key = (n, e)
@@ -71,7 +77,64 @@ class RSA:
 
         return public_key, private_key
 
+    def byte_xor(self, ba1, ba2):
+        return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+
+    def sxor(self, s1, s2):
+        return ''.join(chr(ord(a) ^ ord(b)) for a, b in zip(s1, s2))
+
+    def i2osp(self, integer: int, size: int = 4) -> str:
+        return b"".join([chr((integer >> (8 * i)) & 0xFF).encode() for i in reversed(range(size))])
+
+    def mgf1(self, input_str: bytes, length: int, hash_func=hashlib.sha256) -> str:
+        """Mask generation function."""
+        counter = 0
+        output = b""
+        while len(output) <= length:
+            C = self.i2osp(counter, 4)
+            output += hash_func(input_str + C).digest()
+            counter += 1
+        return output[:length]
+
+    def get_bit_len(self, msg: str):
+        """Returns length of string in bits."""
+        return len(msg.encode('utf-8'))*8
+
+    def generate_padding(self, message: str, n: int, k0=128):  # Change k0 and k1 to more secure standards
+        # I spent a whole day on this and it still doesnt work
+        #message = hexlify(message)
+        mLen = self.get_bit_len(message)//8
+        k = n//8
+        k1 = k - 2 * k0 - mLen - 2
+        print(k1)
+        padding_size = '0' * k1
+
+        # This generates a string of random characters in the length of k0
+        r = ''
+        while self.get_bit_len(r) <= k0:
+            r = r + random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits)
+            #r = r + random.choice(string.digits)
+
+        if self.get_bit_len(r) >= k0:
+            r = r[:-1]
+
+        r_masked = self.mgf1(r.encode('utf-8'), n - k0)
+
+        while self.get_bit_len(message) <= n - k0:
+            message += padding_size
+
+        # Makes sure that the message is smaller than the maximum encryption size of the algorithm used.
+        if self.get_bit_len(message) >= n - k0:
+            message = message.removesuffix(padding_size)
+
+        X = self.byte_xor(message.encode('utf-8'), r_masked)
+        X_masked = self.mgf1(X, k0)
+        Y = self.byte_xor(r_masked, X_masked)
+
+        return X_masked + Y
+
     def encrypt_rsa(self, message: str, public_key: tuple):
+        """Encrypts a Message using the RSA algorithm."""
         message = [ord(c) for c in message]
         message = [c for c in message]
 
@@ -82,6 +145,7 @@ class RSA:
         return cipher_message
 
     def decrypt_rsa(self, cipher_message: list, public_key: tuple, private_key: tuple):
+        """Decrypts a Ciphered Message using the RSA algorithm."""
         enc_msg = []
         for c in cipher_message:
             enc_msg.append(pow(c, private_key[1], public_key[0]))
