@@ -3,6 +3,7 @@ import _thread as thread
 
 
 class Server:
+    # TODO add a function parameter to the on_connect function in wich the user can specify a function to run every server tick
     def __init__(self, host=socket.gethostname(), port=42069) -> None:
         self.S = socket.socket()
         self.host = socket.gethostbyname(host)
