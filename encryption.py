@@ -103,29 +103,34 @@ class RSA:
     def generate_padding(self, message: str, n: int, k0=128):  # Change k0 and k1 to more secure standards
         # I spent a whole day on this and it still doesnt work
         #message = hexlify(message)
+        n = self.get_bit_len(str(n))
+        print(n - k0, (n - k0)//8)
         mLen = self.get_bit_len(message)//8
         k = n//8
         k1 = k - 2 * k0 - mLen - 2
-        print(k1)
         padding_size = '0' * k1
 
-        # This generates a string of random characters in the length of k0
-        r = ''
-        while self.get_bit_len(r) <= k0:
-            r = r + random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits)
-            #r = r + random.choice(string.digits)
+        r = bin(random.randint(0, 2**k0))
 
-        if self.get_bit_len(r) >= k0:
-            r = r[:-1]
+        #print(r)
 
-        r_masked = self.mgf1(r.encode('utf-8'), n - k0)
+        r_masked = bin(int(hexlify(self.mgf1(r.encode('utf-8'), (n - k0)//8)).decode(), 16))
+        #print(r_masked)
 
-        while self.get_bit_len(message) <= n - k0:
-            message += padding_size
+        #while self.get_bit_len(message) <= n - k0:
+
+        message += padding_size
 
         # Makes sure that the message is smaller than the maximum encryption size of the algorithm used.
-        if self.get_bit_len(message) >= n - k0:
-            message = message.removesuffix(padding_size)
+        #if self.get_bit_len(message) >= n - k0:
+        #    message = message.removesuffix(padding_size)
+
+        print(self.get_bit_len(message)//8)
+        msg = [bin(ord(x))[2:] for x in message]
+        msg = 'b0' + ''.join([x for x in msg])
+        print(msg)
+
+        message = bin(message)
 
         X = self.byte_xor(message.encode('utf-8'), r_masked)
         X_masked = self.mgf1(X, k0)
