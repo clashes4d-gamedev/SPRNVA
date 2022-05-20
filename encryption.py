@@ -114,8 +114,12 @@ class RSA:
 
         #print(r)
 
-        r_masked = bin(int(hexlify(self.mgf1(r.encode('utf-8'), (n - k0)//8)).decode(), 16))
-        #print(r_masked)
+        r_masked = bin(int(hexlify(self.mgf1(r.encode('ascii'), (n - k0)//8)).decode(), 16))
+        r_masked = r_masked[2:]
+        print('R_masked: ', r_masked)
+        print('r: ', r)
+
+        #print(type(r_masked), r_masked)
 
         #while self.get_bit_len(message) <= n - k0:
 
@@ -125,18 +129,22 @@ class RSA:
         #if self.get_bit_len(message) >= n - k0:
         #    message = message.removesuffix(padding_size)
 
-        print(self.get_bit_len(message)//8)
+        #print(self.get_bit_len(message)//8)
         msg = [bin(ord(x))[2:] for x in message]
-        msg = 'b0' + ''.join([x for x in msg])
-        print(msg)
+        msg = ''.join([x for x in msg])
+        message = msg
+        #print(type(msg), msg)
 
-        message = bin(message)
+        #message = bin(message)
 
-        X = self.byte_xor(message.encode('utf-8'), r_masked)
-        X_masked = self.mgf1(X, k0)
-        Y = self.byte_xor(r_masked, X_masked)
+        X = ''.join([str(ord(a) ^ ord(b)) for a,b in zip(message,r_masked)])#message ^ r_masked#self.byte_xor(message.encode('utf-8'), r_masked)
+        #print(X)
+        X_masked = bin(int(hexlify(self.mgf1(X.encode('ascii'), k0)), 16))
+        X_masked = X_masked[2:]
+        Y = ''.join([str(ord(a) ^ ord(b)) for a,b in zip(r_masked, X_masked)])
+        #print('Y len: ', len(Y))
 
-        return X_masked + Y
+        return X_masked , Y
 
     def encrypt_rsa(self, message: str, public_key: tuple):
         """Encrypts a Message using the RSA algorithm."""
