@@ -1,17 +1,20 @@
 import socket
 import _thread as thread
+import select
 
 
 class Server:
     # TODO add a function parameter to the on_connect function in wich the user can specify a function to run every server tick
-    def __init__(self, host=socket.gethostname(), port=42069) -> None:
+    def __init__(self, host=socket.gethostname(), port=42069, block_size=2048, encoding='utf-8', max_connections=0) -> None:
         self.S = socket.socket()
         self.host = socket.gethostbyname(host)
         self.port = port
-        self.block_size = 2048
-        self.encoding = 'utf-8'
+        self.block_size = block_size
+        self.encoding = encoding
+        self.max_connections = max_connections
 
         self.S.bind((self.host, self.port))
+        #self.S.setblocking(False)
         self.S.listen()
 
         self.connections = {}
@@ -40,8 +43,8 @@ class Server:
             conn_id = '0'
             self.connections[conn_id] = [connection]
         else:
-            conn_id = int(len(self.connections))
-            self.connections[str(conn_id)] = [connection]
+            conn_id = str(int(len(self.connections)))
+            self.connections[conn_id] = [connection]
 
         while True:
             self.msg = self.receive(connection)
@@ -50,22 +53,36 @@ class Server:
                 handle_func(conn_id, self.connections, connection, self.msg)
             except ConnectionResetError:
                 print('[SERVER] Connection has been reset by Client. Shutting down this Client-Thread.')
-                connection.close()
                 self.connections.pop(conn_id)
+                connection.close()
                 self.stop()
 
             if self.msg == ':STOP':
                 print(f'[SERVER] {conn_id} on {address} disconnected')
                 break
 
-        connection.close()
+            print(self.connections)
         self.connections.pop(conn_id)
+        connection.close()
 
     def start(self, handle_func):
-        while self.active:
-            c, addr = self.S.accept()
-            thread.start_new_thread(self.on_connection, (c, addr, handle_func))
-        self.S.close()
+        try:
+            while self.active:
+                if self.max_connections != 0:
+                    if len(self.connections.keys()) <= self.max_connections:
+                        print(len(self.connections.keys()))
+                        c, addr = self.S.accept()
+                        thread.start_new_thread(self.on_connection, (c, addr, handle_func))
+                    else:
+                        c, addr = self.S.accept()
+                        c.close()
+                else:
+                    c, addr = self.S.accept()
+                    thread.start_new_thread(self.on_connection, (c, addr, handle_func))
+            self.S.close()
+        except KeyboardInterrupt as e:
+            print(f'[SERVER] Shutting down Server because of KeyboardInterrupt.')
+            self.stop()
       
     def stop(self):
         self.active = False
@@ -76,10 +93,15 @@ class Client:
         self.server_list = {'Main': (socket.gethostname(), 42069)}
 
         self.S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.S.setblocking(False)
+        #self.S.settimeout(10)
         self.S.connect_ex(self.server_list[server])
 
-        self.block_size = int(self.S.recv(4).decode())
-        self.block_encoding = self.S.recv(self.block_size).decode()
+        r, _, _ = select.select([self.S], [], [])
+        if r:
+            self.block_size = int(self.S.recv(4).decode())
+
+            self.block_encoding = self.S.recv(self.block_size).decode()
 
     def send(self, msg: str):
         if len(msg.encode(self.block_encoding)) <= self.block_size:
@@ -89,15 +111,15 @@ class Client:
 
     def receive(self, flush=False):
         if flush is False:
-            return self.S.recv(self.block_size).decode(self.block_encoding)
+            r, _, _ = select.select([self.S], [], [])
+            if r:
+                return self.S.recv(self.block_size).decode(self.block_encoding)
         else:
-            if self.S.recv(self.block_size) == b'':
-                return
+            r, _, _ = select.select([self.S], [], [])
+            if r:
+                if self.S.recv(self.block_size) == b'':
+                    return
 
-    def flush(self):
-        print('[CLIENT] Flushing Server stream ...')
-        self.S.recv(self.block_size)
-        print('[CLIENT] Server stream Flushed successfully.')
 
     def disconnect(self):
         self.send(':STOP')
