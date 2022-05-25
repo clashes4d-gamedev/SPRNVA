@@ -61,7 +61,7 @@ class Server:
                 print(f'[SERVER] {conn_id} on {address} disconnected')
                 break
 
-            print(self.connections)
+            #print(self.connections)
         self.connections.pop(conn_id)
         connection.close()
 
