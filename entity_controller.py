@@ -42,7 +42,7 @@ class Player:
     def draw_player_shield(self, x, y, width, height, shield_color=(76, 76, 176), vertical=False):
         shield = self.shield/100
         if vertical:
-            pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - (height * shields)/2, width, height * shield))
+            pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - (height * shield)/2, width, height * shield))
         else:
             pygame.draw.rect(self.win, shield_color, pygame.Rect(x - (width * shield)/2, y, width * shield, height))
 

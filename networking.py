@@ -93,7 +93,7 @@ class Client:
         self.server_list = {'Main': (socket.gethostname(), 42069)}
 
         self.S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.S.setblocking(False)
+        #self.S.setblocking(False)
         #self.S.settimeout(10)
         self.S.connect_ex(self.server_list[server])
 
