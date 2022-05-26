@@ -1,6 +1,7 @@
 import pygame
 import math
 import keyboard
+from os import path
 from .vector import Vector
 from .logic import *
 from pygame.locals import *
@@ -14,45 +15,83 @@ class TextRenderer:
         win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
         self.size = (txt_surf.get_width(), txt_surf.get_height())
 
-#TODO Rewrite and Optimize this
+
 class Button:
-    def __init__(self, win, x, y, width, height, mouse, mouse_btns, btn, img_path='', btn_color=(255,255,255), btn_txt_color=(0,0,0), btn_txt_size=10, btn_font='Arial', btn_text='BTN'):
+    def __init__(self, win, x, y, width, height, color, img='', font_color=(255, 255, 255),
+                 font='Arial', font_size=10, text='Text', mb_pressed=(True, False, False),
+                 rounded_corners=False, border_radius=10, high_precision_mode=False):
+        """Initilizes a Button. (if img!='' or rounded_corners=True it is recommended to use high precision mode for collision detection.)"""
         self.win = win
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.mouse = mouse
-        self.mouse_btns = mouse_btns
-        self.btn = btn
-        self.img_path = img_path
-        self.btn_color = btn_color
-        self.btn_txt_color = btn_txt_color
-        self.btn_txt_size = btn_txt_size
-        self.btn_font = btn_font
-        self.btn_text = btn_text
-        self.button_collider = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.button_surf = pygame.Surface((self.button_collider.width, self.button_collider.height))
+        self.collider = pygame.Rect(x, y, width, height)
+        self.color = color
+
+        if img != '' and CheckPath().existance() and CheckPath().isfile():
+            self.img = pygame.image.load(img).convert()
+            self.img = pygame.transform.scale(self.img, (self.collider.width, self.collider.height))
+        else:
+            self.img = ''
+
+        self.font_color = font_color
+        self.font = font
+        self.font_size = font_size
+        self.text = text
+        self.rounded_corners = rounded_corners
+        self.border_radius = border_radius
+        self.high_precision = high_precision_mode
+        self.state = False
+        self.mb_pressed = mb_pressed
 
     def draw(self):
-        if self.img_path != '':
-            button_img = pygame.image.load(str(self.img_path), '.png').convert()
-            button_img.set_colorkey((0,0,0))
-            button_img = pygame.transform.scale(button_img, (self.button_surf.get_width(), self.button_surf.get_height()))
-            self.button_surf.blit(button_img, (0,0))
-        else:
-            self.button_surf.fill(self.btn_color)
-            TextRenderer(self.button_surf, self.button_surf.get_width()/2, self.button_surf.get_height()/2, self.btn_text, self.btn_font, self.btn_txt_size, self.btn_txt_color)
-        self.win.blit(self.button_surf, (self.button_collider.x, self.button_collider.y))
+        """Draws the Button on a Surface."""
+        button_surf = pygame.Surface((self.collider.width, self.collider.height))
 
-        if pygame.Rect.collidepoint(self.button_collider, self.mouse[0], self.mouse[1]):
-            if self.mouse_btns[self.btn]:
-                return True
+        if self.img == '':
+            if self.rounded_corners:
+                pygame.draw.rect(button_surf, self.color, pygame.Rect(0, 0, self.collider.width, self.collider.height), border_radius=self.border_radius)
             else:
-                return False
+                pygame.draw.rect(button_surf, self.color, pygame.Rect(0, 0, self.collider.width, self.collider.height))
         else:
-            return False
+            button_surf.blit(self.img, (0, 0))
 
+        TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color)
+
+        self.win.blit(button_surf, (self.collider.x, self.collider.y))
+
+        if self.high_precision:
+            mouse = pygame.mouse.get_pos()
+            ms_collider = pygame.Surface((1,1))
+            ms_collider.set_alpha(0)
+            ox = (self.win.get_width()/2) - self.collider.center[0]
+            oy = (self.win.get_height()/2) - self.collider.center[1]
+
+            button_mask = pygame.mask.from_surface(button_surf)
+            cs_mask = pygame.mask.from_surface(ms_collider)
+            cs_mask.fill()
+
+            offset = (mouse[0] - self.collider.x, mouse[1] - self.collider.y)
+            result = button_mask.overlap(cs_mask, offset)
+
+            if result:
+                if pygame.mouse.get_pressed() == self.mb_pressed:
+                    self.state = True
+                else:
+                    self.state = False
+            else:
+                self.state = False
+
+        else:
+            mouse = pygame.mouse.get_pos()
+            if self.collider.collidepoint(mouse[0], mouse[1]):
+                if pygame.mouse.get_pressed() == self.mb_pressed:
+                    self.state = True
+                else:
+                    self.state = False
+            else:
+                self.state = False
+
+    def get_state(self):
+        """Returns the state of the Button either Clicked(True) or Not Clicked(False)."""
+        return self.state
 
 class SubMenu:
     def __init__(self, win, x: int, y: int, width: int, options: list, color: tuple, button_height=20) -> None:
@@ -74,8 +113,8 @@ class SubMenu:
             index = 0
             button_dir = dict()
             for option in self.options:
-                active_button = self.button(self.win, self.x, self.y + (index * self.button_height), self.width, self.button_height,
-                                            mouse, mouse_btns, 0, btn_color=(64, 64, 64), btn_txt_color=(255,255,255), btn_text=option, btn_txt_size=15)
+                active_button = Button(self.win, self.x, self.y, self.width, self.button_height, self.color)#self.button(self.win, self.x, self.y + (index * self.button_height), self.width, self.button_height,
+                                #            mouse, mouse_btns, 0, btn_color=(64, 64, 64), btn_txt_color=(255,255,255), btn_text=option, btn_txt_size=15)
                 if active_button == True:
                     button_dir[index] = True
                 else:
