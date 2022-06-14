@@ -1,13 +1,80 @@
 import pygame
 import math
 import keyboard
+from sys import exit
 from os import path
 from .vector import Vector
 from .logic import *
 from pygame.locals import *
 
+class Window:
+    def __init__(self, size: tuple, caption='THIS WINDOW WAS MADE WITH SPRNVA.', vsync=True, fps=60, resizable=False, fullscreen=False) -> None:
+        self.size = size
+        self.caption = caption
+        self.fps = fps
+        self.fullscreen = fullscreen
+        self.resizable = resizable
+        self.vsync = vsync
+        self.clock = pygame.time.Clock()
+        self.get_ticksLastFrame = 0
+
+    def create(self) -> pygame.Surface:
+        if self.resizable:
+            if self.vsync:
+                display = pygame.display.set_mode(self.size, pygame.RESIZABLE, vsync=1)
+                pygame.display.set_caption(self.caption)
+            else:
+                display = pygame.display.set_mode(self.size, pygame.RESIZABLE)
+                pygame.display.set_caption(self.caption)
+
+        elif self.fullscreen:
+            if self.vsync:
+                display = pygame.display.set_mode(self.size, pygame.FULLSCREEN, vsync=1)
+                pygame.display.set_caption(self.caption)
+            else:
+                display = pygame.display.set_mode(self.size, pygame.FULLSCREEN)
+                pygame.display.set_caption(self.caption)
+        else:
+            if self.vsync:
+                display = pygame.display.set_mode(self.size, vsync=1)
+                pygame.display.set_caption(self.caption)
+            else:
+                display = pygame.display.set_mode(self.size)
+                pygame.display.set_caption(self.caption)
+        return display
+
+    def update(self, rects=None, cap_framerate=True) -> None:
+        """If rects is set this function will only update parts of the screen."""
+        if rects is not None:
+            if type(rects) == list():
+                pygame.display.update(rects)
+            elif type(rects) == pygame.Rect:
+                pygame.display.update(rects)
+            elif type(rects) == None:
+                pass
+            else:
+                raise TypeError('rects argument must be of type pygame.Rect or list containing multiple pygame.Rect objects.')
+        else:
+            pygame.display.flip()
+
+        if cap_framerate:
+            self.clock.tick(self.fps)
+
+    def get_fps(self, integer=False) -> float:
+        if integer:
+            return int(self.clock.get_fps())
+        else:
+            return self.clock.get_fps()
+
+    def get_dt(self) -> float:
+        t = pygame.time.get_ticks()
+        deltatime = (t - self.get_ticksLastFrame) / 1000.0
+        self.get_ticksLastFrame = t
+        return deltatime + 1
+
 class TextRenderer:
     def __init__(self, win, x, y, text, font, size, color):
+        """Renders given text on given Surface in given font in given color."""
         pygame.font.init()
         txt = pygame.font.SysFont(font, size)
         txt_surf = txt.render(text, False, color)
@@ -125,7 +192,7 @@ class SubMenu:
             pass
 
 class InputBox:
-    def __init__(self, win: pygame.Surface, pos: Vector, size: Vector, border_thickness=3):
+    def __init__(self, win: pygame.Surface, pos: Vector, size: Vector, border_thickness=3, placeholder_text='', placeholder_color=(84, 84, 84)):
         self.win = win
         self.pos = pos
         self.size = size
@@ -136,8 +203,10 @@ class InputBox:
         self.value = ''
         self.surf = pygame.Surface((self.size.x, self.size.y))
         self.collider = self.surf.get_rect(topleft=(self.pos.x, self.pos.y))
+        self.placeholder_text = placeholder_text
+        self.placeholder_color = placeholder_color
 
-    def update(self, m_btn: tuple, mouse=(0,0)):
+    def update(self, m_btn: tuple, mouse=(0, 0)):
         if mouse == (0, 0):
             mouse = pygame.mouse.get_pos()
         else:
@@ -171,6 +240,9 @@ class InputBox:
         pygame.draw.rect(self.surf, color, (0, 0, self.collider.width, self.collider.height), border_radius=border_radius)
         if self.focused:
             pygame.draw.rect(self.surf, border_color, (0, 0, self.collider.width, self.collider.height), width=self.border, border_radius=border_radius)
+        else:
+            if self.value == '':
+                TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.placeholder_text, 'Arial', self.collider.height - 5, self.placeholder_color)
 
         TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.value, 'Arial', self.collider.height - 5, text_color)
         self.win.blit(self.surf, (self.collider.x, self.collider.y))
@@ -246,4 +318,4 @@ def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
     pygame.draw.ellipse(vignetten_surf, (255, 255, 255), vignetten_rect)
     return vignetten_surf
 
-SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox]
+SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card]

@@ -11,16 +11,6 @@ class WatchValue:
         else:
             return True
 
-class DeltaTime:
-    def __init__(self):
-        self.get_ticksLastFrame = 0
-
-    def count(self):
-        t = pygame.time.get_ticks()
-        deltatime = (t - self.get_ticksLastFrame) / 1000.0
-        self.get_ticksLastFrame = t
-        return deltatime
-
 class CheckPath:
     def __init__(self, path):
         self.path = path
