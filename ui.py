@@ -43,8 +43,21 @@ class Window:
                 pygame.display.set_caption(self.caption)
         return display
 
-    def update(self, rects=None, cap_framerate=True) -> None:
+    def update(self, events, rects=None, cap_framerate=True) -> None:
         """If rects is set this function will only update parts of the screen."""
+        if events is not None:
+            for event in events:
+                if event.type == pygame.QUIT:
+                    print('exit')
+                    pygame.quit()
+                    exit()
+
+                if event.type == pygame.VIDEORESIZE:
+                    self.size = (event.w, event.h)
+        
+        else:
+            raise ValueError('events must be given and should be a list of current pygame events.')
+        
         if rects is not None:
             if type(rects) == list():
                 pygame.display.update(rects)
@@ -179,6 +192,7 @@ class Button:
             return self.state
 
 class SubMenu:
+    # TODO rewrite this to fit to the new button class
     def __init__(self, win, x: int, y: int, width: int, options: list, color: tuple, button_height=20) -> None:
         self.win = win
         self.x = x
@@ -189,6 +203,13 @@ class SubMenu:
         self.button_height = button_height
         self.collider = pygame.Rect(self.x, self.y, self.width, self.button_height*len(self.options))
 
+    def get_hover(self):
+        mouse = pygame.mouse.get_pos()
+        if self.collider.collidepoint(mouse[0], mouse[1]):
+            return True
+        else:
+            return False
+
     def get_dist_from_cursor(self, cursor):
         return math.sqrt(cursor[0]**2 + cursor[1]**2) - math.sqrt(self.y**2 + self.x**2)
 
@@ -198,8 +219,7 @@ class SubMenu:
             index = 0
             button_dir = dict()
             for option in self.options:
-                active_button = Button(self.win, self.x, self.y, self.width, self.button_height, self.color, text=str(option))#self.button(self.win, self.x, self.y + (index * self.button_height), self.width, self.button_height,
-                                #            mouse, mouse_btns, 0, btn_color=(64, 64, 64), btn_txt_color=(255,255,255), btn_text=option, btn_txt_size=15)
+                active_button = Button(self.win, self.x, self.y, self.width, self.button_height, self.color, text=str(option))
                 active_button.draw()
                 if active_button == True:
                     button_dir[index] = True
