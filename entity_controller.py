@@ -1,5 +1,6 @@
 import pygame
 from .vector import Vector, VectorOperations
+from .ui import add_vignette
 
 class Player:
     def __init__(self, win, pos: Vector, size: Vector, img='', color=(255, 0, 0),
@@ -32,22 +33,63 @@ class Player:
         self.surf = pygame.Surface((self.collider.width, self.collider.height))
         self.img = pygame.image.load(img).convert_alpha() if img != '' else img
 
-    def draw_player_health(self, x, y, width, height, health_color=(171, 21, 21), vertical=False):
+    def draw_player_health(self, x, y, width, height, health_color=(171, 21, 21), vertical=False, border=False, border_radius=0, vignette=False):
         health = self.health/100
-        if vertical:
-            pygame.draw.rect(self.win, health_color, pygame.Rect(x, y - (height * health)/2, width, height * health))
+        h_vig_offset = 100
+        if border_radius:
+            if vertical:
+                pygame.draw.rect(self.win, health_color, pygame.Rect(x, y - (height * health)/2, width, height * health), border_radius=border_radius)
+                if border:
+                    pygame.draw.rect(self.win, health_color, pygame.Rect(x, y - height/2, width, height), width=1, border_radius=border_radius)
+            else:
+                pygame.draw.rect(self.win, health_color, pygame.Rect(x - (width * health)/2, y, width * health, height), border_radius=border_radius)
+                if border:
+                    pygame.draw.rect(self.win, health_color, pygame.Rect(x - width/2, y, width, height), width=1, border_radius=border_radius)
+                # if vignette:
+                #     if self.health <= self.health/2:
+                #         h_vig_offset = 50
+                #         print('adding vignette')
+                #         #win: pygame.Surface, offset: int, color: tuple, alpha: int
+                #         add_vignette(self.win, 0, 0, h_vig_offset, health_color, 50)
+                #     else:
+                #         if h_vig_offset <= 100:
+                #             h_vig_offset += 0.005
+                #             add_vignette(self.win, 0, 0, h_vig_offset, health_color, 50)
+                    
         else:
-            pygame.draw.rect(self.win, health_color, pygame.Rect(x - (width * health)/2, y, width * health, height))
+            if vertical:
+                pygame.draw.rect(self.win, health_color, pygame.Rect(x, y - (height * health)/2, width, height * health))
+                if border:
+                    pygame.draw.rect(self.win, health_color, pygame.Rect(x, y - height/2, width, height), width=1)
+            else:
+                pygame.draw.rect(self.win, health_color, pygame.Rect(x - (width * health)/2, y, width * health, height))
+                if border:
+                    pygame.draw.rect(self.win, health_color, pygame.Rect(x - width/2, y, width, height), width=1)
 
-    def draw_player_shield(self, x, y, width, height, shield_color=(76, 76, 176), vertical=False):
+    def draw_player_shield(self, x, y, width, height, shield_color=(76, 76, 176), vertical=False, border=False, border_radius=0):
         shield = self.shield/100
-        if vertical:
-            pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - (height * shield)/2, width, height * shield))
+        if border_radius:
+            if vertical:
+                pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - (height * shield)/2, width, height * shield), border_radius=border_radius)
+                if border:
+                    pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - height/2, width, height), width=1, border_radius=border_radius)
+            else:
+                pygame.draw.rect(self.win, shield_color, pygame.Rect(x - (width * shield)/2, y, width * shield, height), border_radius=border_radius)
+                if border:
+                    pygame.draw.rect(self.win, shield_color, pygame.Rect(x - width/2, y, width, height), width=1, border_radius=border_radius)
         else:
-            pygame.draw.rect(self.win, shield_color, pygame.Rect(x - (width * shield)/2, y, width * shield, height))
+            if vertical:
+                pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - (height * shield)/2, width, height * shield))
+                if border:
+                    pygame.draw.rect(self.win, shield_color, pygame.Rect(x, y - height/2, width, height), width=1)
+            else:
+                pygame.draw.rect(self.win, shield_color, pygame.Rect(x - (width * shield)/2, y, width * shield, height))
+                if border:
+                    pygame.draw.rect(self.win, shield_color, pygame.Rect(x - width/2, y, width, height), width=1)
 
 
     def add_damage(self, damage: float):
+        # TODO Make a seperate funtion to check if the player can take damage on shields or health and then call this
         if self.shield != 0:  # Shields absord damage without any resistances (cough...cough...space ninja wizard game...cough...cough)
             self.shield_regen_counter = 0
             if self.shield >= 0:

@@ -73,19 +73,25 @@ class Window:
         return deltatime + 1
 
 class TextRenderer:
-    def __init__(self, win, x, y, text, font, size, color):
-        """Renders given text on given Surface in given font in given color."""
+    def __init__(self, win, x, y, text, font, size, color, font_file=False):
         pygame.font.init()
-        txt = pygame.font.SysFont(font, size)
-        txt_surf = txt.render(text, False, color)
-        text_dim = txt.size(text)
-        win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
-        self.size = (txt_surf.get_width(), txt_surf.get_height())
+        if font_file is False:
+            txt = pygame.font.SysFont(font, size)
+            txt_surf = txt.render(text, False, color)
+            text_dim = txt.size(text)
+            win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
+            self.size = (txt_surf.get_width(), txt_surf.get_height())
+        else:
+            txt = pygame.font.Font(font, size)
+            txt_surf = txt.render(text, False, color)
+            text_dim = txt.size(text)
+            win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
+            self.size = (txt_surf.get_width(), txt_surf.get_height())
 
 
 class Button:
     def __init__(self, win, x, y, width, height, color, img='', font_color=(255, 255, 255),
-                 font='Arial', font_size=10, text='Text', mb_pressed=(True, False, False),
+                 font='Arial', font_size=10, text='Text', use_sys_font=True, mb_pressed=(True, False, False),
                  rounded_corners=False, border_radius=10, high_precision_mode=False):
         """Initilizes a Button. (if img!='' or rounded_corners=True it is recommended to use high precision mode for collision detection.)"""
         self.win = win
@@ -101,11 +107,13 @@ class Button:
         self.font_color = font_color
         self.font = font
         self.font_size = font_size
+        self.use_sys_font = use_sys_font
         self.text = text
         self.rounded_corners = rounded_corners
         self.border_radius = border_radius
         self.high_precision = high_precision_mode
         self.state = False
+        self.hover_state = False
         self.mb_pressed = mb_pressed
 
     def draw(self):
@@ -120,7 +128,10 @@ class Button:
         else:
             button_surf.blit(self.img, (0, 0))
 
-        TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color)
+        if self.use_sys_font:
+            TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color)
+        else:
+            TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color, font_file=True)
 
         self.win.blit(button_surf, (self.collider.x, self.collider.y))
 
@@ -139,26 +150,33 @@ class Button:
             result = button_mask.overlap(cs_mask, offset)
 
             if result:
+                self.hover_state = True
                 if pygame.mouse.get_pressed() == self.mb_pressed:
                     self.state = True
                 else:
                     self.state = False
             else:
+                self.hover_state = False
                 self.state = False
 
         else:
             mouse = pygame.mouse.get_pos()
             if self.collider.collidepoint(mouse[0], mouse[1]):
+                self.hover_state = True
                 if pygame.mouse.get_pressed() == self.mb_pressed:
                     self.state = True
                 else:
                     self.state = False
             else:
+                self.hover_state = False
                 self.state = False
 
-    def get_state(self):
-        """Returns the state of the Button either Clicked(True) or Not Clicked(False)."""
-        return self.state
+    def get_state(self, hover=False):
+        """Returns the state of the Button either Clicked(True) or Not Clicked(False). \nIf hover is True this returns the hoverstate."""
+        if hover:
+            return self.hover_state
+        else:
+            return self.state
 
 class SubMenu:
     def __init__(self, win, x: int, y: int, width: int, options: list, color: tuple, button_height=20) -> None:
@@ -174,14 +192,15 @@ class SubMenu:
     def get_dist_from_cursor(self, cursor):
         return math.sqrt(cursor[0]**2 + cursor[1]**2) - math.sqrt(self.y**2 + self.x**2)
 
-    def draw(self, mouse):
+    def draw(self):
         mouse_btns = pygame.mouse.get_pressed()
         if len(self.options) != 0:
             index = 0
             button_dir = dict()
             for option in self.options:
-                active_button = Button(self.win, self.x, self.y, self.width, self.button_height, self.color)#self.button(self.win, self.x, self.y + (index * self.button_height), self.width, self.button_height,
+                active_button = Button(self.win, self.x, self.y, self.width, self.button_height, self.color, text=str(option))#self.button(self.win, self.x, self.y + (index * self.button_height), self.width, self.button_height,
                                 #            mouse, mouse_btns, 0, btn_color=(64, 64, 64), btn_txt_color=(255,255,255), btn_text=option, btn_txt_size=15)
+                active_button.draw()
                 if active_button == True:
                     button_dir[index] = True
                 else:
@@ -306,9 +325,10 @@ class Card:
         self.win.blit(self.card_surf, (self.collider.x, self.collider.y))
 
 
-def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
+def add_vignette(win: pygame.Surface, x, y, offset: int, color: tuple, alpha: int) -> pygame.Surface:
     """Draws a Vignette around the given coordinates.
        Returns a pygame Surface with the Vignette."""
+    # TODO Rewrite this
     vignetten_surf = pygame.Surface((win.get_width(), win.get_height()))
     vignetten_surf.set_colorkey((255, 255, 255))
     vignetten_surf.set_alpha(alpha)
@@ -316,6 +336,7 @@ def add_vignette(win: pygame.Surface, offset: int, color: tuple, alpha: int):
     vignetten_rect = vignetten_surf.get_rect()
     vignetten_rect = pygame.Rect(vignetten_rect.x - (offset*8), vignetten_rect.y + offset*.03125, vignetten_rect.width + (offset*16), vignetten_rect.height - offset*.0625)
     pygame.draw.ellipse(vignetten_surf, (255, 255, 255), vignetten_rect)
-    return vignetten_surf
+    win.blit(vignetten_surf, (x, y))
+    #return vignetten_surf
 
 SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card]
