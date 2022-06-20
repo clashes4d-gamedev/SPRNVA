@@ -85,6 +85,12 @@ class Window:
         self.get_ticksLastFrame = t
         return deltatime + 1
 
+    def get_keys(self):
+        return pygame.key.get_pressed()
+
+    def get_events(self):
+        return pygame.event.get()
+
 class TextRenderer:
     def __init__(self, win, x, y, text, font, size, color, font_file=False):
         pygame.font.init()

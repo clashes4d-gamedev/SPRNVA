@@ -1,6 +1,5 @@
 import pygame
 from .vector import Vector, VectorOperations
-from .ui import add_vignette
 
 class Player:
     def __init__(self, win, pos: Vector, size: Vector, img='', color=(255, 0, 0),
