@@ -63,7 +63,7 @@ class Window:
                 pygame.display.update(rects)
             elif type(rects) == pygame.Rect:
                 pygame.display.update(rects)
-            elif type(rects) == None:
+            elif type(rects) is None:
                 pass
             else:
                 raise TypeError('rects argument must be of type pygame.Rect or list containing multiple pygame.Rect objects.')
@@ -111,7 +111,7 @@ class Button:
         self.collider = pygame.Rect(x, y, width, height)
         self.color = color
 
-        if img != '' and CheckPath().existance() and CheckPath().isfile():
+        if img != '' and CheckPath(img).existance() and CheckPath(img).isfile():
             self.img = pygame.image.load(img).convert()
             self.img = pygame.transform.scale(self.img, (self.collider.width, self.collider.height))
         else:
@@ -150,10 +150,8 @@ class Button:
 
         if self.high_precision:
             mouse = pygame.mouse.get_pos()
-            ms_collider = pygame.Surface((1,1))
+            ms_collider = pygame.Surface((1, 1))
             ms_collider.set_alpha(0)
-            ox = (self.win.get_width()/2) - self.collider.center[0]
-            oy = (self.win.get_height()/2) - self.collider.center[1]
 
             button_mask = pygame.mask.from_surface(button_surf)
             cs_mask = pygame.mask.from_surface(ms_collider)
@@ -344,19 +342,5 @@ class Card:
         self.card_surf.blit(self.content_surf, (0, self.collider.height/3), special_flags=pygame.BLEND_ALPHA_SDL2)
         self.win.blit(self.card_surf, (self.collider.x, self.collider.y))
 
-
-def add_vignette(win: pygame.Surface, x, y, offset: int, color: tuple, alpha: int) -> pygame.Surface:
-    """Draws a Vignette around the given coordinates.
-       Returns a pygame Surface with the Vignette."""
-    # TODO Rewrite this
-    vignetten_surf = pygame.Surface((win.get_width(), win.get_height()))
-    vignetten_surf.set_colorkey((255, 255, 255))
-    vignetten_surf.set_alpha(alpha)
-    vignetten_surf.fill(color)
-    vignetten_rect = vignetten_surf.get_rect()
-    vignetten_rect = pygame.Rect(vignetten_rect.x - (offset*8), vignetten_rect.y + offset*.03125, vignetten_rect.width + (offset*16), vignetten_rect.height - offset*.0625)
-    pygame.draw.ellipse(vignetten_surf, (255, 255, 255), vignetten_rect)
-    win.blit(vignetten_surf, (x, y))
-    #return vignetten_surf
 
 SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card]
