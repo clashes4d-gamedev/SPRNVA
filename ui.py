@@ -3,7 +3,7 @@ import math
 import keyboard
 from sys import exit
 from os import path
-from .vector import Vector
+from .vector import Vector2D
 from .logic import *
 from pygame.locals import *
 
@@ -235,7 +235,7 @@ class SubMenu:
             pass
 
 class InputBox:
-    def __init__(self, win: pygame.Surface, pos: Vector, size: Vector, border_thickness=3, placeholder_text='', placeholder_color=(84, 84, 84)):
+    def __init__(self, win: pygame.Surface, pos: Vector2D, size: Vector2D, border_thickness=3, placeholder_text='', placeholder_color=(84, 84, 84)):
         self.win = win
         self.pos = pos
         self.size = size

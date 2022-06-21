@@ -1,8 +1,8 @@
 import pygame
-from .vector import Vector, VectorOperations
+from .vector import Vector2D, VectorOperations
 
 class Player:
-    def __init__(self, win, pos: Vector, size: Vector, img='', color=(255, 0, 0),
+    def __init__(self, win, pos: Vector2D, size: Vector2D, img='', color=(255, 0, 0),
                  health=100, shield=50, shield_regen_counter=1, health_regen_counter=1, resistance=0.25):
         self.win = win
         self.x = pos.x
@@ -143,7 +143,7 @@ class Player:
                 collisions.append(tile)
         return collisions
 
-    def move(self, tiles, vel:Vector, dt:float, x=False, y=False, minus_y=False, minus_x=False, boundaries=True):
+    def move(self, tiles, vel:Vector2D, dt:float, x=False, y=False, minus_y=False, minus_x=False, boundaries=True):
         if vel >= 0:
             if boundaries:
                 if x is not False and (self.collider.x + self.collider.width) <= self.win.get_width():
@@ -203,7 +203,7 @@ class Player:
             return
 
 class Enemy:
-    def __init__(self, win, pos: Vector, size: Vector, img='', color=(255, 0, 0)):
+    def __init__(self, win, pos: Vector2D, size: Vector2D, img='', color=(255, 0, 0)):
         self.win = win
         self.x = pos.x
         self.y = pos.y

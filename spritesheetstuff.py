@@ -1,6 +1,6 @@
 import pygame
 import os
-from .vector import Vector
+from .vector import Vector2D
 
 #TODO fix tiles scrolling by or not blitting in the right spot
 class Spritesheet:
@@ -14,7 +14,7 @@ class Spritesheet:
             self.spritesheet_rect = self.current_spritesheet.get_rect()
             self.tile_width = self.spritesheet_rect.width / self.cols
             self.tile_height = self.spritesheet_rect.height / self.rows
-            self.tile_center = Vector(self.tile_width/2, self.tile_height/2)
+            self.tile_center = Vector2D(self.tile_width/2, self.tile_height/2)
             self.tiles = list([(index % self.cols * self.tile_width, index / self.cols * self.tile_height, self.tile_width, self.tile_height) for index in range(self.total)])
         else:
             raise FileNotFoundError(f'No file named {filepath}')

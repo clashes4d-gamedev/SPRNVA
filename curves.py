@@ -1,17 +1,17 @@
 import math
 import numpy as np
 import scipy.interpolate as si
-from .vector import Vector, VectorOperations
+from .vector import Vector2D, VectorOperations
 
 class QuadraticBezier:
-    def __init__(self, p0: Vector, p1: Vector, p2: Vector, t:float):
+    def __init__(self, p0: Vector2D, p1: Vector2D, p2: Vector2D, t:float):
         self.p0 = p0
         self.p1 = p1
         self.p2 = p2
         self.t = t
         self.curr_x = (1 - self.t)**2 * self.p0.x + 2 * self.t * (1 - self.t) * self.p1.x + self.t**2 * self.p2.x
         self.curr_y = (1 - self.t)**2 * self.p0.y + 2 * self.t * (1 - self.t) * self.p1.y + self.t**2 * self.p2.y
-        self.curve = Vector(self.curr_x, self.curr_y)
+        self.curve = Vector2D(self.curr_x, self.curr_y)
 
     def get_points(self, step_size_mod):
         curve_points = []
@@ -28,7 +28,7 @@ class QuadraticBezier:
         return curve_points
 
 class CubicBezier:
-    def __init__(self, p0: Vector, p1: Vector, p2: Vector, p3: Vector, t: float):
+    def __init__(self, p0: Vector2D, p1: Vector2D, p2: Vector2D, p3: Vector2D, t: float):
         self.p0 = p0
         self.p1 = p1
         self.p2 = p2
@@ -36,7 +36,7 @@ class CubicBezier:
         self.t = t
         self.curr_x = (1 - self.t)**3 * self.p0.x + 3 * self.t * (1 - self.t)**2 * self.p1.x + 3 * self.t**2 * (1 - self.t) * self.p2.x + self.t**3 * self.p3.x
         self.curr_y = (1 - self.t)**3 * self.p0.y + 3 * self.t * (1 - self.t)**2 * self.p1.y + 3 * self.t**2 * (1 - self.t) * self.p2.y + self.t**3 * self.p3.y
-        self.curve = Vector(self.curr_x, self.curr_y)
+        self.curve = Vector2D(self.curr_x, self.curr_y)
         #print(self.curve)
 
     def get_points(self, step_size_mod):
@@ -98,13 +98,13 @@ class CurveOperations:
     def __init__(self) -> None:
         pass
 
-    def p_on_circle(self, vec: Vector, radius: int, angle: float) -> Vector:
+    def p_on_circle(self, vec: Vector2D, radius: int, angle: float) -> Vector2D:
         angle = math.radians(angle)
         x = radius * math.cos(angle) + vec.x
         y = radius * math.sin(angle) + vec.y
-        return Vector(x, y)
+        return Vector2D(x, y)
 
-    def gen_points_on_circle(self, center: Vector, radius: int, num_points: int, spacing=0) -> list:
+    def gen_points_on_circle(self, center: Vector2D, radius: int, num_points: int, spacing=0) -> list:
         point_list = []
         num_deg = 0
         for point in range(num_points):
