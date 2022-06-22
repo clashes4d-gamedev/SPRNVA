@@ -79,6 +79,9 @@ class Window:
         else:
             return self.clock.get_fps()
 
+    def get_size(self) -> Vector2D:
+        return Vector2D(self.size[0], self.size[1])
+
     def get_dt(self) -> float:
         t = pygame.time.get_ticks()
         deltatime = (t - self.get_ticksLastFrame) / 1000.0

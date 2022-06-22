@@ -26,6 +26,11 @@ class Vector2D:
             return Vector2D(self.x * other.x, self.y * other.y)
         return Vector2D(self.x * other, self.y * other)
 
+    def __rmul__(self, other):
+        if isinstance(other, self.__class__):
+            return Vector2D(other.x * self.x, other.y * self.y)
+        return Vector2D(other * self.x, other * self.y)
+
     def __truediv__(self, other):
         if isinstance(other, self.__class__):
             return Vector2D(self.x / other.x, self.y / other.y)
@@ -116,6 +121,10 @@ class Vector2D:
         except ZeroDivisionError:
             return math.radians(90) - math.radians(90)
 
+    def magsq(self):
+        """Returns the squared magnitude of the current Vector."""
+        return self.x**2 + self.y**2
+
     def scale(self, ammount):
         """Scales the current Vector by a Scalar."""
         self.x *= ammount
@@ -149,6 +158,13 @@ class Vector2D:
         angle = math.radians(angle)
         self.x = self.x * math.cos(angle) - self.y * math.sin(angle)
         self.y = self.x * math.sin(angle) + self.y * math.cos(angle)
+
+    def dist(self, vec2, vectorform=False):
+        """Returns the Distance between current Vector and given Vector."""
+        if vectorform:
+            return Vector2D(self.x - vec2.x, self.y - vec2.y)
+        else:
+            return math.sqrt((vec2.y - self.x)**2 + (vec2.y - self.y)**2)
 
 # TODO This is deprecated and will be removed in future releases
 class VectorOperations:
