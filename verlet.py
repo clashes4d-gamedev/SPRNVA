@@ -3,6 +3,7 @@ import pygame
 import SPRNVA as sprnva
 from numba import jit
 from SPRNVA import Vector2D
+import time
 
 # class VerletBall:
 #     def __init__(self, pos: Vector2D, acc: Vector2D, dt: float, sim_size: Vector2D, ground_friction=0.5, radius=5, grav_constant=Vector2D(0, -9.81)):
@@ -57,7 +58,7 @@ from SPRNVA import Vector2D
 #     def draw(self, win: pygame.Surface, color: tuple):
 #         pygame.draw.circle(win, color, (self.pos.x, self.pos.y), self.radius)
 
-@jit(nopython=True, parallel=True)
+@jit(nopython=True)
 def _calc_verlet_vertex_constraints(pos, size, radius):
     x, y = pos
     if y + radius >= size[1]:
@@ -240,10 +241,19 @@ class Cloth:
 
     def update(self, iterations_in_frame=100):
         for _ in range(iterations_in_frame):
-            [[vertex.constrain() for vertex in row] for row in self.vertices]
-            [[joint.update() for joint in row] for row in self.joints]
 
-        [[vertex.update() for vertex in row] for row in self.vertices]
+            for row in self.vertices:
+                    for vertex in row:
+                        vertex.constrain()
+
+            for row in self.joints:
+                for joint in row:
+                    joint.update()
+
+        for row in self.vertices:
+            for vertex in row:
+                vertex.update()
+
 
     def draw(self, win, color):
         if self.fill is False:
@@ -266,13 +276,17 @@ class Cloth:
                     if Cindex+1 == len(row):
                         outer_half_points2.append((vertex.pos.x, vertex.pos.y))
 
-                    if Cindex == 0:
-                        outer_half_points1.append((vertex.pos.x, vertex.pos.y))
-
                     if Rindex+1 == len(self.vertices):
-                        outer_half_points1.append((vertex.pos.x, vertex.pos.y))
+                        rev_list = row[::-1]
+                        for vert in rev_list:
+                            outer_half_points2.append((vert.pos.x, vert.pos.y))
 
-            pygame.draw.polygon(win, color, outer_half_points1)
+                    if Cindex == 0:
+                        rev_list = row[::-1]
+                        for vert in rev_list:
+                            outer_half_points2.append((vert.pos.x, vert.pos.y))
+
+            #pygame.draw.polygon(win, color, outer_half_points1)
             pygame.draw.polygon(win, color, outer_half_points2)
 
 class Main:
@@ -281,9 +295,9 @@ class Main:
         self.win = self.ctx.create()
         self.cloth = Cloth(Vector2D(1280, 720),  # sim size
                            Vector2D(0, 0),  # sim pos
-                           Vector2D(25, 25),  # cloth width & height
-                           Vector2D(25, 25),  # cloth x & y spacing
-                           sim_step=0.05, fill=False)  # simulation time step
+                           Vector2D(5, 5),  # cloth width & height
+                           Vector2D(50, 50),  # cloth x & y spacing
+                           sim_step=0.05, fill=True)  # simulation time step
 
     def update(self):
         while True:
@@ -292,9 +306,12 @@ class Main:
             keys = self.ctx.get_keys()
             fps = self.ctx.get_fps(integer=True)
 
-            self.cloth.update(16)
+            start_time = time.time()
+            self.cloth.update(8)
 
             self.cloth.draw(self.win, (255, 255, 255))
+            print('cloth update time', time.time()-start_time)
+
 
             sprnva.TextRenderer(self.win, 25, 25, f'FPS: {fps}', 'Arial', 10, (255, 0, 0))
             self.ctx.update(events)
