@@ -91,6 +91,10 @@ class Window:
     def get_keys(self):
         return pygame.key.get_pressed()
 
+    def get_mouse(self):
+        mouse = pygame.mouse.get_pos()
+        return Vector2D(mouse[0], mouse[1])
+
     def get_events(self):
         return pygame.event.get()
 

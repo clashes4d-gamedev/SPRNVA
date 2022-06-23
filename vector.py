@@ -134,10 +134,13 @@ class Vector2D:
     def normalize(self):
         """Normalizes current Vector to a Unit vector with magnitude of 1."""
         try:
+            x = self.x
+            y = self.y
             mag_temp = 1 / self.magnitude
-            self.x *= mag_temp
-            self.y *= mag_temp
-            self.magnitude = round(self._length())  # Round because of floating point errors
+            x *= mag_temp
+            y *= mag_temp
+            #magnitude = round(self._length())  # Round because of floating point errors
+            return Vector2D(x, y)
 
         except ZeroDivisionError:  # this makes sure that the current vector is not the origin vector
             raise PositionVectorError("Cant Normalize Position Vector due to ZeroDivisionError.")
