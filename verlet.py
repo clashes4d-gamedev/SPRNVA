@@ -5,6 +5,7 @@ from numba import jit
 from SPRNVA import Vector2D
 import time
 
+
 # class VerletBall:
 #     def __init__(self, pos: Vector2D, acc: Vector2D, dt: float, sim_size: Vector2D, ground_friction=0.5, radius=5, grav_constant=Vector2D(0, -9.81)):
 #         self.pos = pos
@@ -76,11 +77,12 @@ def _calc_verlet_vertex_constraints(pos, size, radius):
     output = (x, y)
     return output
 
+
 @jit(nopython=True, fastmath=True)
 def _calc_verlet_vertex_position(pos, vel, acc, size_y, radius, vel_magnitude, coll_friction):
     curr_vel_x = vel[0]
     curr_vel_y = vel[0]
-    if pos[1] + radius >= size_y and (curr_vel_x**2) + (curr_vel_y**2) > 0.00001:
+    if pos[1] + radius >= size_y and (curr_vel_x ** 2) + (curr_vel_y ** 2) > 0.00001:
         curr_vel_x /= vel_magnitude
         curr_vel_y /= vel_magnitude
 
@@ -91,12 +93,13 @@ def _calc_verlet_vertex_position(pos, vel, acc, size_y, radius, vel_magnitude, c
 
     return pos
 
+
 @jit(nopython=True, fastmath=True)
 def _calc_verlet_joint(vert1_pos, vert2_pos, length, mass, vert_pin):
     dx = vert2_pos[0] - vert1_pos[0]
     dy = vert2_pos[1] - vert1_pos[1]
 
-    distance = (dx ** 2 + dy ** 2)**(1/2)
+    distance = (dx ** 2 + dy ** 2) ** (1 / 2)
     difference = (length - distance) / distance
 
     offset_x = dx * difference * 0.5
@@ -124,8 +127,16 @@ def _calc_verlet_joint(vert1_pos, vert2_pos, length, mass, vert_pin):
 
     return (vert1_endpos_x, vert1_endpos_y), (vert2_endpos_x, vert2_endpos_y)
 
+
+# Precompiles gpu functions
+_calc_verlet_joint
+_calc_verlet_vertex_constraints
+_calc_verlet_vertex_position
+
+
 class VerletVertex:
-    def __init__(self, size: Vector2D, pos: Vector2D, acc: Vector2D, dt: float, mass=1.0, radius=1, coll_friction=0.75, pinned=False):
+    def __init__(self, size: Vector2D, pos: Vector2D, acc: Vector2D, dt: float, mass=1.0, radius=1, coll_friction=0.75,
+                 pinned=False):
         self.size = size
         self.pos = pos
         self.acc = acc
@@ -141,7 +152,9 @@ class VerletVertex:
         if self.pinned is False:
             self.vel = self.pos - self.old_pos
 
-            calc_pos = _calc_verlet_vertex_position((self.pos.x, self.pos.y), (self.vel.x, self.vel.y), (self.acc.x, self.acc.y), self.size.y, self.radius, self.vel.magnitude, self.coll_friction)
+            calc_pos = _calc_verlet_vertex_position((self.pos.x, self.pos.y), (self.vel.x, self.vel.y),
+                                                    (self.acc.x, self.acc.y), self.size.y, self.radius,
+                                                    self.vel.magnitude, self.coll_friction)
             self.pos = Vector2D(calc_pos[0], calc_pos[1])
 
             self.old_pos = self.pos
@@ -154,7 +167,9 @@ class VerletVertex:
     def draw(self, win: pygame.Surface, color: tuple, show_forces=False):
         pygame.draw.circle(win, color, (self.pos.x, self.pos.y), self.radius)
         if show_forces:
-            pygame.draw.line(win, (255, 0, 0), (self.pos.x, self.pos.y), (self.pos.x + self.vel.x * self.vel.magnitude, self.pos.y + self.vel.y * self.vel.magnitude))
+            pygame.draw.line(win, (255, 0, 0), (self.pos.x, self.pos.y), (
+            self.pos.x + self.vel.x * self.vel.magnitude, self.pos.y + self.vel.y * self.vel.magnitude))
+
 
 class VerletJoint:
     def __init__(self, p1: VerletVertex, p2: VerletVertex, length=None):
@@ -163,7 +178,8 @@ class VerletJoint:
         if length:
             self.length = length
         else:
-            self.length = math.sqrt((self.vert2.pos.x - self.vert1.pos.x)**2 + (self.vert2.pos.y - self.vert1.pos.y)**2)
+            self.length = math.sqrt(
+                (self.vert2.pos.x - self.vert1.pos.x) ** 2 + (self.vert2.pos.y - self.vert1.pos.y) ** 2)
 
     def update(self):
         if self.vert1.pinned:
@@ -175,16 +191,20 @@ class VerletJoint:
             vert_2_pin = 1
         else:
             vert_2_pin = 0
-        vert1, vert2 = _calc_verlet_joint((self.vert1.pos.x, self.vert1.pos.y), (self.vert2.pos.x, self.vert2.pos.y), self.length, (self.vert1.mass, self.vert2.mass), (vert_1_pin, vert_2_pin))
+        vert1, vert2 = _calc_verlet_joint((self.vert1.pos.x, self.vert1.pos.y), (self.vert2.pos.x, self.vert2.pos.y),
+                                          self.length, (self.vert1.mass, self.vert2.mass), (vert_1_pin, vert_2_pin))
         self.vert1.pos = Vector2D(vert1[0], vert1[1])
         self.vert2.pos = Vector2D(vert2[0], vert2[1])
 
     def draw(self, win, color):
         pygame.draw.line(win, color, (self.vert1.pos.x, self.vert1.pos.y), (self.vert2.pos.x, self.vert2.pos.y))
 
+
 class Cloth:
-    def __init__(self, sim_size=Vector2D(50, 50), sim_pos=Vector2D(50, 50), cloth_size=Vector2D(1, 1), cloth_spacing=Vector2D(1, 1),
-                 mass=0, tearing_threshold=0, fixed=True, fill=False, acceleration=Vector2D(0, 0.98), sim_step=0.5, cloth_dict={}):
+    def __init__(self, sim_size=Vector2D(50, 50), sim_pos=Vector2D(50, 50), cloth_size=Vector2D(1, 1),
+                 cloth_spacing=Vector2D(1, 1),
+                 mass=0, tearing_threshold=0, fixed=True, fill=False, acceleration=Vector2D(0, 0.98), sim_step=0.5,
+                 cloth_dict={}):
         self.sim_size = sim_size
         self.sim_pos = sim_pos
         self.cloth_size = cloth_size
@@ -192,10 +212,7 @@ class Cloth:
         self.fixed = fixed
         self.cloth_dict = cloth_dict
 
-        if mass == 0:
-            self.mass = self.cloth_size.x * self.cloth_size.y
-        else:
-            self.mass = mass
+        self.mass = mass
 
         self.tearing_threshold = tearing_threshold
         if self.tearing_threshold == 0 or self.tearing_threshold <= 0:
@@ -204,19 +221,23 @@ class Cloth:
             self.tearing = True
 
         self.fill = fill
+        if self.fill:
+            print('Warning: fill has been set to True. (The Fill option is still a Work in Progress!)')
         self.acceleration = acceleration
         self.sim_step = sim_step
 
         self.vertices = []
         self.joints = []
 
-        print(self.cloth_dict)
         if self.cloth_dict != {}:
-            #for vert in self.cloth_dict['VERTICES']:
-            self.vertices = self.cloth_dict['VERTICES']
+            for row in self.cloth_dict['VERTICES']:
+                self.vertices.append(row)
 
-            for joint in self.cloth_dict['JOINTS']:
-                self.joints.append(VerletJoint(self.cloth_dict['VERTICES'][joint[0]], self.cloth_dict['VERTICES'][joint[1]]))
+            for row in self.cloth_dict['JOINTS']:
+                joint_row = []
+                joint_row.append(VerletJoint(row[0], row[1]))
+                self.joints.append(joint_row)
+
         else:
             self.gen_vertices()
             self.gen_joints()
@@ -227,16 +248,28 @@ class Cloth:
             for vertex in row:
                 vertex.acc = self.acceleration
 
+    def set_simpos(self, new_pos: Vector2D):
+        for index, row in enumerate(self.vertices):
+            if index == 0:
+                for index, vertex in enumerate(row):
+                    vertex.pos = Vector2D(new_pos.x + self.cloth_spacing.x * index, new_pos.y)
+
     def gen_vertices(self):
         self.vertices = []
-        mass_for_vert = self.mass / (self.cloth_size.x * self.cloth_size.y)
+        # mass_for_vert = self.mass / (self.cloth_size.x * self.cloth_size.y)
         for row in range(int(self.cloth_size.y)):
             row_verts = []
             for char in range(int(self.cloth_size.x)):
                 if row == 0 and self.fixed:
-                    row_verts.append(VerletVertex(self.sim_size, Vector2D(self.sim_pos.x + (char * self.cloth_spacing.x), self.sim_pos.y + (row * self.cloth_spacing.y)), self.acceleration, self.sim_step, pinned=True))
+                    row_verts.append(VerletVertex(self.sim_size,
+                                                  Vector2D(self.sim_pos.x + (char * self.cloth_spacing.x),
+                                                           self.sim_pos.y + (row * self.cloth_spacing.y)),
+                                                  self.acceleration, self.sim_step, pinned=True))
                 else:
-                    row_verts.append(VerletVertex(self.sim_size, Vector2D(self.sim_pos.x + (char * self.cloth_spacing.x), self.sim_pos.y + (row * self.cloth_spacing.y)), self.acceleration, self.sim_step, mass=mass_for_vert))
+                    row_verts.append(VerletVertex(self.sim_size,
+                                                  Vector2D(self.sim_pos.x + (char * self.cloth_spacing.x),
+                                                           self.sim_pos.y + (row * self.cloth_spacing.y)),
+                                                  self.acceleration, self.sim_step, mass=self.mass))
             self.vertices.append(row_verts)
 
     def gen_joints(self):
@@ -253,14 +286,14 @@ class Cloth:
                     pass
 
                 try:
-                    row_joints.append(VerletJoint(char, row[Cindex+1]))
+                    row_joints.append(VerletJoint(char, row[Cindex + 1]))
                 except IndexError:
                     pass
 
             self.joints.append(row_joints)
 
-    def update(self, iterations_in_frame=100):
-        #TODO Rewrite this to fit a cloth dict
+    def update(self, iterations_in_frame=1):
+        # TODO Rewrite this to fit a cloth dict
 
         for _ in range(iterations_in_frame):
 
@@ -274,21 +307,20 @@ class Cloth:
 
             for row in self.vertices:
                 for index, vertex in enumerate(row):
-                    vertex.constrain()
-
-        for row in self.vertices:
-            for vertex in row:
-                vertex.update()
+                    vertex.update()
 
     def draw(self, win, color):
+        win_size = Vector2D(win.get_width(), win.get_height())
         if self.fill is False:
             for row in self.vertices:
                 for vertex in row:
-                    vertex.draw(win, color)
+                    if vertex.pos <= win_size:
+                        vertex.draw(win, color)
 
             for row in self.joints:
                 for joint in row:
-                    joint.draw(win, color)
+                    if joint.vert2.pos - joint.vert1.pos <= win_size:
+                        joint.draw(win, color)
 
         else:
             outer_points = []
@@ -296,7 +328,7 @@ class Cloth:
                 for Cindex, vertex in enumerate(row):
 
                     if Rindex == 0:
-                        #for vertex in row[::-1]:
+                        # for vertex in row[::-1]:
                         outer_points.append((vertex.pos.x, vertex.pos.y))
 
                     if Cindex + 1 == len(row):
@@ -308,37 +340,56 @@ class Cloth:
 
             pygame.draw.lines(win, color, False, outer_points)
 
+
 class Main:
     def __init__(self):
-        self.ctx = sprnva.Window((1280, 720), caption='Verlet Integration')
+        self.ctx = sprnva.Window((1280, 720), caption='Verlet Integration', resizable=True)
         self.win_size = self.ctx.get_size()
         self.win = self.ctx.create()
-        self.cloth_dict = {'VERTICES': [VerletVertex(self.win_size, Vector2D(50, 50), Vector2D(0, 0), 0.05, pinned=True),  # 0
-                                        VerletVertex(self.win_size, Vector2D(75, 50), Vector2D(0, 0), 0.05, pinned=True),  # 1
-                                        VerletVertex(self.win_size, Vector2D(50, 75), Vector2D(0, 0), 0.05),               # 2
-                                        VerletVertex(self.win_size, Vector2D(75, 75), Vector2D(0, 0), 0.05),               # 3
-                                        VerletVertex(self.win_size, Vector2D(65, 65), Vector2D(0, 0), 0.05)],              # 4
-                           'JOINTS': [(0, 1), (0, 3), (0, 2), (1, 3), (2, 3), (2, 4), (3, 4)]}
+
+        # TODO Write an engine for this
+        self.cloth_verts = [[VerletVertex(self.win_size, Vector2D(50, 50), Vector2D(0, 0), 0.05),  # 0
+                             VerletVertex(self.win_size, Vector2D(75, 50), Vector2D(0, 0), 0.05)],  # 1
+
+                            [VerletVertex(self.win_size, Vector2D(50, 75), Vector2D(0, 0), 0.05),  # 2
+                             VerletVertex(self.win_size, Vector2D(75, 75), Vector2D(0, 0), 0.05)],  # 3
+
+                            [VerletVertex(self.win_size, Vector2D(65, 65), Vector2D(0, 0), 0.05)]]
+
+        self.cloth_dict = {'VERTICES': self.cloth_verts,
+                           'JOINTS': [(self.cloth_verts[0][0], self.cloth_verts[0][1]),
+                                      (self.cloth_verts[0][0], self.cloth_verts[1][1]),
+                                      (self.cloth_verts[0][0], self.cloth_verts[1][0]),
+                                      (self.cloth_verts[0][1], self.cloth_verts[1][1]),
+                                      (self.cloth_verts[1][0], self.cloth_verts[1][1]),
+                                      (self.cloth_verts[1][0], self.cloth_verts[0][1]),
+                                      (self.cloth_verts[0][1], self.cloth_verts[2][0]),
+                                      (self.cloth_verts[1][1], self.cloth_verts[2][0])]}
+
         self.cloth = Cloth(Vector2D(1280, 720),  # sim size
                            Vector2D(50, 50),  # sim pos
                            Vector2D(10, 10),  # cloth width & height (Resolution)
-                           Vector2D(25, 25),  # cloth x & y spacing
-                           sim_step=0.05, mass=1000, fill=False, acceleration=Vector2D(0, 9.81), tearing_threshold=100, cloth_dict=self.cloth_dict)  # simulation time step
-        #self.verlet_obj = VerletVertex(Vector2D(1280, 720), Vector2D(25, 25), Vector2D(5, 9.81), 0.05)#, mass=221)
+                           Vector2D(10, 10),  # cloth x & y spacing
+                           sim_step=0.05,  # simulation time step
+                           fill=False,  # Filled?
+                           acceleration=Vector2D(0, 9.81 / 2),  # Constant acceleration
+                           tearing_threshold=0,
+                           mass=1)  # Tearing threshold
+        # cloth_dict=self.cloth_dict)
+        # self.verlet_obj = VerletVertex(Vector2D(1280, 720), Vector2D(25, 25), Vector2D(5, 9.81), 0.05)#, mass=221)
 
     def update(self):
         while True:
             self.win.fill((0, 0, 0))
             events = self.ctx.get_events()
-            keys = self.ctx.get_keys()
             dt = self.ctx.get_dt()
             mouse = self.ctx.get_mouse()
-            Nmouse = mouse.normalize()
+            mouse_rel = pygame.mouse.get_rel()
             fps = self.ctx.get_fps(integer=True)
 
-            self.cloth.set_acceleration(self.cloth.acceleration + Nmouse * dt)
+            self.cloth.set_simpos(mouse)
 
-            self.cloth.update(100)
+            self.cloth.update(4)
 
             self.cloth.draw(self.win, (255, 255, 255))
 
