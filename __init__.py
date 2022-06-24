@@ -1,7 +1,6 @@
 from .ui import *
 from .vector import *
 from .curves import *
-from .objects import *
 from .entity_controller import *
 from .spritesheetstuff import *
 from .image import *
@@ -15,3 +14,4 @@ from .audio import *
 from .encryption import *
 from .networking import *
 from .grid import *
+from .verlet import *

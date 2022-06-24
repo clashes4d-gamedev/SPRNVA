@@ -1,3 +1,5 @@
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from PIL import Image, ImageOps, ImageDraw
 def crop_circle(img_path):

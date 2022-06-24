@@ -1,3 +1,5 @@
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import os
 from .vector import Vector2D

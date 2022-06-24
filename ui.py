@@ -1,8 +1,9 @@
+from os import path, environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import math
 import keyboard
 from sys import exit
-from os import path
 from .vector import Vector2D
 from .logic import *
 from pygame.locals import *
@@ -48,7 +49,6 @@ class Window:
         if events is not None:
             for event in events:
                 if event.type == pygame.QUIT:
-                    print('exit')
                     pygame.quit()
                     exit()
 

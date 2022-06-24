@@ -1,7 +1,5 @@
 import socket
 import _thread as thread
-import select
-
 
 class Server:
     def __init__(self, host=socket.gethostname(), port=42069, block_size=2048, encoding='utf-8', max_connections=0) -> None:

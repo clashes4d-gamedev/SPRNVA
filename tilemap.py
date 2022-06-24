@@ -1,5 +1,3 @@
-
-
 class LVL:
     def __init__(self):
         pass

@@ -1,4 +1,3 @@
-import pygame
 from os import path
 
 class WatchValue:
