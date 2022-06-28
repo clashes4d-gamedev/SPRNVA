@@ -162,12 +162,9 @@ class Vector2D:
         self.x = self.x * math.cos(angle) - self.y * math.sin(angle)
         self.y = self.x * math.sin(angle) + self.y * math.cos(angle)
 
-    def dist(self, vec2, vectorform=False):
+    def dist(self, vec2):
         """Returns the Distance between current Vector and given Vector."""
-        if vectorform:
-            return Vector2D(self.x - vec2.x, self.y - vec2.y)
-        else:
-            return math.sqrt((vec2.y - self.x)**2 + (vec2.y - self.y)**2)
+        return ((vec2.y - self.x)**2 + (vec2.y - self.y)**2)**(1/2)
 
 # TODO This is deprecated and will be removed in future releases
 class VectorOperations:

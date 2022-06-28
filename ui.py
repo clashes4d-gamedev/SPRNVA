@@ -2,22 +2,24 @@ from os import path, environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import math
-import keyboard
+import cv2
 from sys import exit
 from .vector import Vector2D
 from .logic import *
-from pygame.locals import *
+
 
 class Window:
-    def __init__(self, size: tuple, caption='THIS WINDOW WAS MADE WITH SPRNVA.', vsync=True, fps=60, resizable=False, fullscreen=False) -> None:
+    def __init__(self, size: tuple, caption='THIS WINDOW WAS MADE WITH SPRNVA.', vsync=True, fps=60, resizable=False, fullscreen=False, splash_vid=True) -> None:
         self.size = size
         self.caption = caption
         self.fps = fps
         self.fullscreen = fullscreen
         self.resizable = resizable
         self.vsync = vsync
+        self.splash_vid = splash_vid
         self.clock = pygame.time.Clock()
         self.get_ticksLastFrame = 0
+        self.win = self.create()
 
     def create(self) -> pygame.Surface:
         if self.resizable:
@@ -46,6 +48,26 @@ class Window:
 
     def update(self, events, rects=None, cap_framerate=True) -> None:
         """If rects is set this function will only update parts of the screen."""
+        if self.splash_vid:
+            wdir = path.join(path.split(__file__)[0], 'res')
+            video = cv2.VideoCapture(path.join(wdir, 'SPRNVA_SPLASH.mp4'))
+            fps = video.get(cv2.CAP_PROP_FPS)
+            success, video_image = video.read()
+            while success:
+                success, video_image = video.read()
+
+                if success:
+                    video_surf = pygame.image.frombuffer(
+                        video_image.tobytes(), video_image.shape[1::-1], "BGR")
+
+                    video_surf = pygame.transform.scale(video_surf, self.size)
+
+                    self.win.blit(video_surf, (0, 0))
+
+                pygame.time.Clock().tick(fps)
+                pygame.display.flip()
+            self.splash_vid = False
+
         if events is not None:
             for event in events:
                 if event.type == pygame.QUIT:
