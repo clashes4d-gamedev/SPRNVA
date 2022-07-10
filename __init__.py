@@ -7,7 +7,6 @@ from .image import *
 #from .pathfinding import *
 from .shapes import *
 from .logic import *
-from .lib_3d import *
 from .primitives_3d import *
 from .color_classification import *
 from .audio import *

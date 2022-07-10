@@ -1,7 +1,7 @@
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-from .vector import Vector2D, VectorOperations
+from .vector import Vector2D
 
 class Player:
     def __init__(self, win, pos: Vector2D, size: Vector2D, img='', color=(255, 0, 0),

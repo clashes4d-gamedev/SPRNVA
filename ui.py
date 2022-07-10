@@ -51,7 +51,6 @@ class Window:
         if self.splash_vid:
             wdir = path.join(path.split(__file__)[0], 'res')
             video = cv2.VideoCapture(path.join(wdir, 'SPRNVA_SPLASH.mp4'))
-            fps = video.get(cv2.CAP_PROP_FPS)
             success, video_image = video.read()
             while success:
                 success, video_image = video.read()
@@ -64,7 +63,6 @@ class Window:
 
                     self.win.blit(video_surf, (0, 0))
 
-                pygame.time.Clock().tick(fps)
                 pygame.display.flip()
             self.splash_vid = False
 

@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import scipy.interpolate as si
-from .vector import Vector2D, VectorOperations
+from .vector import Vector2D#, VectorOperations
 
 class QuadraticBezier:
     def __init__(self, p0: Vector2D, p1: Vector2D, p2: Vector2D, t:float):
@@ -24,7 +24,7 @@ class QuadraticBezier:
         curve_points = []
         for i in range(int(self.t)):
             curve = QuadraticBezier(self.p0, self.p1, self.p2, i * step_size_mod).curve
-            curve_points.append(VectorOperations().vec_to_tuple(curve))
+            curve_points.append(curve.to_tuple())
         return curve_points
 
 class CubicBezier:
@@ -50,7 +50,7 @@ class CubicBezier:
         curve_points = []
         for i in range(int(self.t)):
             curve = CubicBezier(self.p0, self.p1, self.p2, self.p3, i * step_size_mod).curve
-            curve_points.append(VectorOperations().vec_to_tuple(curve))
+            curve_points.append(curve.to_tuple())
         #print(curve_points)
         return curve_points
 

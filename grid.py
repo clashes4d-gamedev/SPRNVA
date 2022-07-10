@@ -1,67 +1,96 @@
-class Grid:
-    #TODO make this use Dicts instead of lists
-    def __init__(self, size_rc: tuple) -> None:
-        """Generates and Stores a 2D Grid."""
-        self.size_rc = size_rc
-        self.grid = {}
+from os import path
+from .vector import Vector2D
+import pygame
 
-    def generate(self) -> None:
-        """Generates a Grid based on size, rows & columns."""
-        for y in range(int(self.size_rc[1])):
-            row = {}
-            for x in range(int(self.size_rc[0])):
-                row[x] = None
-            self.grid[y] = row
+supp_img_formats = ['PNG', 'JPG', 'BMP']
 
-    def get_grid(self) -> dict:
-        """Returns the Grid."""
-        return self.grid
 
-    def set_pos(self, pos: tuple, item) -> None:
-        """Sets item of given Position."""
-        self.grid[pos[0]][pos[1]] = item
+class IsoImageLoadError(Exception):
+    def __init__(self):
+        pass
 
-    def get_pos(self, pos: tuple):
-        """Gets item of given Position."""
-        return self.grid[pos[0]][pos[1]]
+class Tile:
+    def __init__(self, x: int, y: int, width: int, height: int, color=(255, 0, 0), img='', color_key=(0, 0, 0)):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.color = color
+        self.img = pygame.image.load(self._import_img(img)).convert_alpha() if img != '' else None
+        self.collider = pygame.Rect(self.x, self.y, self.width, self.height)
 
-    def set_row(self, row_index: int, item):
-        """Fills a row with given item."""
-        row = {}
-        for i in range(self.size_rc[0]):
-            row[i] = item
+    def _import_img(self, img: str):
+        if img[-3:].upper() in supp_img_formats and path.isfile(img):
+            return img
+        else:
+            raise IsoImageLoadError()
 
-        self.grid[row_index] = row
+    def draw(self, win: pygame.Surface):
+        if self.img is not None or type(self.img) == str():
+            win.blit(self.img, (self.collider.x, self.collider.y))
+        else:
+            pygame.draw.rect(win, self.color, self.collider)
 
-    def get_row(self, row: int):
-        """Returns items of given row index."""
-        return self.grid[row]
 
-    def set_col(self, col: int, item):
-        """Fills a column with given item."""
-        for k, v in enumerate(self.grid.items()):
-            v[1][col] = item
+class IsoGrid:
+    def __init__(self, x: int, y: int, rows: int, cols: int, tile_size: tuple, img=''):
+        self.x = x
+        self.y = y
+        self.rows = rows
+        self.cols = cols
+        self.tile_width = tile_size[0]
+        self.tile_height = tile_size[1]
 
-    def get_col(self, col: int):
-        """Returns items of given coll index."""
-        coll_contents = []
-        for row in self.grid:
-            coll_contents.append(row[col])
-        return coll_contents
+        self.i_hat = Vector2D(1 * (self.tile_width/2),
+                              0.5 * (self.tile_height / 2))
 
-    def set_area(self, start_pos: tuple, items: list):
-        """Replaces area in Grid with another 2D list."""
-        for ri, row in enumerate(items):
-            for ci, col in enumerate(row):
-                self.grid[start_pos[0] + ci][start_pos[1] + ri] = col
+        self.j_hat = Vector2D(-1 * (self.tile_width/2),
+                              0.5 * (self.tile_height / 2))
 
-    def get_area(self, start_pos: tuple, end_pos: tuple):
-        """Replaces area in Grid with another 2D list. WIP"""
-        #WIP
-        items = {}
-        for i, v in enumerate(self.grid.items()):
-            if i == start_pos[0]:
-                for j, val in enumerate(v.items()):
-                    if j == start_pos[1]:
-                        items[i][j] = val
-        return items
+        self.img = self._import_img(img) if img != '' else None
+        self.tiles = []
+        self._generate_grid()
+
+    def _import_img(self, img: str):
+        if img[-3:].upper() in supp_img_formats and path.isfile(img):
+            return img
+        else:
+            raise IsoImageLoadError()
+
+    def _generate_grid(self):
+        x, y = 0, 0
+        for row in range(self.rows):
+            x = 0
+            y_row = []
+            for col in range(self.cols):
+                x_coords, y_coords = self.ISO_toXY(x, y)
+                curr_tile = Tile(x_coords + self.x, y_coords + self.y, self.tile_width, self.tile_height, img=self.img if self.img is not None else '')
+                y_row.append(curr_tile)
+                x += 1
+            self.tiles.append(y_row)
+            y += 1
+
+    def ISO_toXY(self, x, y):
+        coords = Vector2D(x * self.i_hat.x + y * self.j_hat.x,
+                          x * self.i_hat.y + y * self.j_hat.y)
+        return coords.x - (self.tile_width/2), int(coords.y)
+
+    def XY_toISO(self, Sx, Sy):
+        Sx = Sx - self.x
+        Sy = Sy - self.y
+        det = (1 / (self.i_hat.x * self.j_hat.y - self.j_hat.x * self.i_hat.y))
+
+        a = det * self.j_hat.y
+        b = det * -self.j_hat.x
+        c = det * -self.i_hat.y
+        d = det * self.i_hat.x
+
+        return int((Sx * a) + (Sy * b)), int((Sx * c) + (Sy * d))
+
+    def get_tiles(self):
+        return self.tiles
+
+    def draw(self, win: pygame.Surface):
+        for row in self.tiles:
+            for tile in row:
+                tile.draw(win)
