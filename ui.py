@@ -6,6 +6,7 @@ import cv2
 from sys import exit
 from .vector import Vector2D
 from .logic import *
+from scipy.interpolate import interp1d
 
 
 class Window:
@@ -374,6 +375,85 @@ class Card:
 
         self.card_surf.blit(self.content_surf, (0, self.collider.height/3), special_flags=pygame.BLEND_ALPHA_SDL2)
         self.win.blit(self.card_surf, (self.collider.x, self.collider.y))
+
+class Slider:
+    def __init__(self, pos: Vector2D, size: Vector2D, min_val: float, max_val: float, mid_color=(64, 64, 64), bar_color=(128, 128, 128), offset=Vector2D(0, 0)):
+        self.pos = pos
+        self.size = size
+        self.min_val = min_val
+        self.max_val = max_val
+        self.mid_color = mid_color
+        self.bar_color = bar_color
+        self.mid_val = 0.5 * max_val
+        self.offset = offset
+        _mid_sl_bl_pos = self.pos.interpolate(self.size, 0.5)
+        self.mid_sl_bar = pygame.Rect(_mid_sl_bl_pos.x + self.offset.x, _mid_sl_bl_pos.y + self.offset.y, 10, self.size.y)
+        self.slider_rect = pygame.Rect(self.pos.x +  + self.offset.x, (self.pos.y +  + self.offset.y) - self.size.y/8, self.size.x, self.size.y/4)
+
+    def _map_range(self):
+        mapper = interp1d([self.pos.x, self.pos.x + self.size.x], [self.min_val, self.max_val], fill_value='extrapolate')
+        mapped_value = mapper(self.mid_sl_bar.x)
+
+        return mapped_value
+
+    def update(self, ctx: Window):
+        mouse = ctx.get_mouse()
+
+        if self.mid_sl_bar.collidepoint(mouse.x, mouse.y) and pygame.mouse.get_pressed() == (True, False, False):
+            self.mid_sl_bar.x = mouse.x - self.mid_sl_bar.width / 2
+
+            if self.mid_sl_bar.x <= self.pos.x + self.size.x:
+                pass
+            else:
+                self.mid_sl_bar.x = self.pos.x + self.size.x
+
+            if self.mid_sl_bar.x >= self.pos.x:
+                pass
+            else:
+                self.mid_sl_bar.x = self.pos.x
+
+        elif self.slider_rect.collidepoint(mouse.x, mouse.y) and pygame.mouse.get_pressed() == (True, False, False):
+            self.mid_sl_bar.x = mouse.x - self.mid_sl_bar.width / 2
+
+        self.mid_val = self._map_range()
+
+    def get_val(self):
+        return self.mid_val
+
+    def draw(self, win: pygame.Surface):
+        TextRenderer(win, self.slider_rect.x - self.offset.x, (self.slider_rect.y - self.offset.y) - 20, str(self.min_val), 'Arial', 10, (255, 255, 255))
+        TextRenderer(win, (self.slider_rect.x + self.size.x)  - self.offset.x, (self.slider_rect.y - self.offset.y) - 20, str(self.max_val), 'Arial', 10, (255, 255, 255))
+        TextRenderer(win, self.mid_sl_bar.x  - self.offset.x, (self.mid_sl_bar.y - self.offset.x) - 20, str(self.mid_val), 'Arial', 10, (255, 255, 255))
+
+        pygame.draw.rect(win, self.bar_color, pygame.Rect(self.slider_rect.x - self.offset.x, self.slider_rect.y - self.offset.y, self.slider_rect.width, self.slider_rect.height))
+        pygame.draw.rect(win, self.mid_color, pygame.Rect(self.mid_sl_bar.x - self.offset.x, self.mid_sl_bar.y - self.offset.y, self.mid_sl_bar.width, self.mid_sl_bar.height))
+
+class CheckBox:
+    def __init__(self, pos: Vector2D, size: Vector2D, color=(255, 255, 255)):
+        self.pos = pos
+        self.size = size
+        self.color = color
+        self.toggeled = False
+        self.checkbox_rect = pygame.Rect(self.pos.x, self.pos.y, self.size.x, self.size.y)
+
+    def update(self, ctx: Window):
+        # rework this
+        mouse = ctx.get_mouse()
+        if self.checkbox_rect.collidepoint(mouse.x, mouse.y):
+            if pygame.mouse.get_pressed() == (True, False, False):
+                if self.toggeled:
+                    self.toggeled = False
+                else:
+                    self.toggeled = True
+
+    def draw(self, win: pygame.Surface):
+        pygame.draw.rect(win, self.color, self.checkbox_rect, border_radius=int((self.size.x + self.size.y)/16))
+        if self.toggeled:
+            pygame.draw.circle(win, (255 - self.color[0], 255 - self.color[1], 255 - self.color[2]), (self.pos.x + self.size.x/2, self.pos.y + self.size.y/2), (self.size.x + self.size.y)/4)
+
+    def get_val(self):
+        return self.toggeled
+
 
 
 SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card]
