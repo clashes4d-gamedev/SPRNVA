@@ -1,0 +1,66 @@
+{
+  "BUTTON1": {
+      "TYPE": "BUTTON",
+      "x": 0.5,
+      "y": 0.5,
+      "WIDTH": 200,
+      "HEIGHT": 50,
+      "TEXT": "I AM A BUTTON!",
+      "BACKGROUND": "PATH/TO/BG"
+  },
+
+    "BUTTON2": {
+      "TYPE": "BUTTON",
+      "x": 0.3,
+      "y": 0.2,
+      "WIDTH": 200,
+      "HEIGHT": 50,
+      "TEXT": "I AM ALSO A BUTTON!",
+      "BACKGROUND": "PATH/TO/BG"
+  },
+
+    "TB1": {
+      "TYPE": "TEXTBOX",
+      "x": 0.3,
+      "y": 0.5,
+      "WIDTH": 200,
+      "HEIGHT": 50,
+      "PLACEHOLDER_TEXT": "I AM A TEXTBOX",
+      "BGCOLOR": [255, 255, 255],
+      "TEXTCOLOR": [64, 64, 64],
+      "BORDERRADIUS": 5
+  },
+
+    "CH1": {
+      "TYPE": "CHECKBOX",
+      "x": 0.1,
+      "y": 0.5,
+      "WIDTH": 50,
+      "HEIGHT": 50,
+      "INITVALUE": true,
+      "COLOR": [255, 255, 255]
+  },
+
+    "title": {
+      "TYPE": "TEXT",
+      "x": 0.1,
+      "y": 0.1,
+      "TEXT": "I AM A TITLE.",
+      "SIZE": 40,
+      "FONT": "Arial",
+      "CENTERED": false,
+      "COLOR": [255, 255, 255]
+  },
+
+    "slider1": {
+      "TYPE": "SLIDER",
+      "x": 0.5,
+      "y": 0.9,
+      "WIDTH": 200,
+      "HEIGHT": 50,
+      "MINVAL": 0,
+      "MAXVAL": 100,
+      "BARCOLOR":[64, 64, 64],
+      "COLOR": [255, 255, 255]
+  }
+}

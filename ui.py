@@ -1,8 +1,10 @@
-from os import path, environ
+from os import path, environ, getcwd
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import math
 import cv2
+import json
+from typing import Optional
 from sys import exit
 from .vector import Vector2D
 from .logic import *
@@ -10,7 +12,7 @@ from scipy.interpolate import interp1d
 
 
 class Window:
-    def __init__(self, size: tuple, caption='THIS WINDOW WAS MADE WITH SPRNVA.', vsync=True, fps=60, resizable=False, fullscreen=False, splash_vid=True) -> None:
+    def __init__(self, size: tuple, caption='THIS WINDOW WAS MADE WITH SPRNVA.', vsync=True, fps=60, resizable=False, fullscreen=False, icon_path='', splash_vid=True) -> None:
         self.size = size
         self.caption = caption
         self.fps = fps
@@ -18,6 +20,7 @@ class Window:
         self.resizable = resizable
         self.vsync = vsync
         self.splash_vid = splash_vid
+        self.icon_path = icon_path if icon_path != '' and path.isfile(icon_path) else path.join(path.split(__file__)[0], path.join('res', 'missing_texture.png'))
         self.clock = pygame.time.Clock()
         self.get_ticksLastFrame = 0
         self.win = self.create()
@@ -45,6 +48,9 @@ class Window:
             else:
                 display = pygame.display.set_mode(self.size)
                 pygame.display.set_caption(self.caption)
+
+        icon = pygame.image.load(self.icon_path).convert_alpha()
+        pygame.display.set_icon(icon)
         return display
 
     def update(self, events, rects=None, cap_framerate=True) -> None:
@@ -54,14 +60,18 @@ class Window:
             video = cv2.VideoCapture(path.join(wdir, 'SPRNVA_SPLASH.mp4'))
             success, video_image = video.read()
             while success:
+                events = pygame.event.get()
+                for event in events:
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+
                 success, video_image = video.read()
 
                 if success:
                     video_surf = pygame.image.frombuffer(
                         video_image.tobytes(), video_image.shape[1::-1], "BGR")
-
                     video_surf = pygame.transform.scale(video_surf, self.size)
-
                     self.win.blit(video_surf, (0, 0))
 
                 pygame.display.flip()
@@ -120,20 +130,39 @@ class Window:
         return pygame.event.get()
 
 class TextRenderer:
-    def __init__(self, win, x, y, text, font, size, color, font_file=False):
+    def __init__(self, win: pygame.Surface, x: float, y: float, text: str, font: str, size: int, color: tuple, font_file=False, centered=True):
+        self.win = win
+        self.x = x
+        self.y = y
+        self.centered = centered
+        self.text = text
+        self.font = font
+        self.text_size = size
+        self.color = color
+        self.font_file = font_file
         pygame.font.init()
-        if font_file is False:
-            txt = pygame.font.SysFont(font, size)
-            txt_surf = txt.render(text, False, color)
-            text_dim = txt.size(text)
-            win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
-            self.size = (txt_surf.get_width(), txt_surf.get_height())
+
+    def draw(self):
+        if self.font_file is False:
+            self.txt = pygame.font.SysFont(self.font, self.text_size)
+            self.txt_surf = self.txt.render(self.text, False, self.color)
+            self.text_dim = self.txt.size(self.text)
+            if self.centered:
+                self.win.blit(self.txt_surf, (self.x - self.text_dim[0]/2, self.y - self.text_dim[1]/2))
+                self.size = (self.txt_surf.get_width(), self.txt_surf.get_height())
+            else:
+                self.win.blit(self.txt_surf, (self.x, self.y))
+                self.size = (self.txt_surf.get_width(), self.txt_surf.get_height())
         else:
-            txt = pygame.font.Font(font, size)
-            txt_surf = txt.render(text, False, color)
-            text_dim = txt.size(text)
-            win.blit(txt_surf, (x - text_dim[0]/2, y - text_dim[1]/2))
-            self.size = (txt_surf.get_width(), txt_surf.get_height())
+            self.txt = pygame.font.Font(self.font, self.text_size)
+            self.txt_surf = self.txt.render(self.text, False, self.color)
+            self.text_dim = self.txt.size(self.text)
+            if self.centered:
+                self.win.blit(self.txt_surf, (self.x - self.text_dim[0] / 2, self.y - self.text_dim[1] / 2))
+                self.size = (self.txt_surf.get_width(), self.txt_surf.get_height())
+            else:
+                self.win.blit(self.txt_surf, (self.x, self.y))
+                self.size = (self.txt_surf.get_width(), self.txt_surf.get_height())
 
 
 class Button:
@@ -176,9 +205,9 @@ class Button:
             button_surf.blit(self.img, (0, 0))
 
         if self.use_sys_font:
-            TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color)
+            TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color).draw()
         else:
-            TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color, font_file=True)
+            TextRenderer(button_surf, self.collider.width//2, self.collider.height//2, self.text, self.font, self.font_size, self.font_color, font_file=True).draw()
 
         self.win.blit(button_surf, (self.collider.x, self.collider.y))
 
@@ -263,33 +292,40 @@ class SubMenu:
             pass
 
 class InputBox:
-    def __init__(self, win: pygame.Surface, pos: Vector2D, size: Vector2D, border_thickness=3, placeholder_text='', placeholder_color=(84, 84, 84)):
+    def __init__(self, win: pygame.Surface, pos: Vector2D, size: Vector2D, border_thickness=3, placeholder_text='', placeholder_color=(84, 84, 84),
+                 text_color=(255, 255, 255), color=(64, 64, 64), border_color=(20, 95, 255), border_radius=5):
         self.win = win
         self.pos = pos
         self.size = size
-        #self.collider = pygame.Rect(self.pos.x, self.pos.y, self.size.x, self.size.y)
         self.border = 1
         self.border_thickness = border_thickness
         self.focused = False
         self.value = ''
-        self.surf = pygame.Surface((self.size.x, self.size.y))
+        self.surf = pygame.Surface((self.size.x, self.size.y), flags=pygame.SRCALPHA)
+        self.surf.convert_alpha()
         self.collider = self.surf.get_rect(topleft=(self.pos.x, self.pos.y))
         self.placeholder_text = placeholder_text
         self.placeholder_color = placeholder_color
+        self.text_color = text_color
+        self.color = color
+        self.border_color = border_color
+        self.border_radius = border_radius
 
-    def update(self, m_btn: tuple, mouse=(0, 0)):
+    def update(self, events, mouse=(0, 0)):
         if mouse == (0, 0):
             mouse = pygame.mouse.get_pos()
         else:
             pass
 
         if self.collider.collidepoint(mouse[0], mouse[1]):
-            if pygame.mouse.get_pressed() == m_btn:
+            if pygame.mouse.get_pressed() == (True, False, False):
                 self.border = self.border_thickness
                 self.focused = True
         else:
             if True in pygame.mouse.get_pressed():
                 self.focused = False
+
+        self.get_input(events)
 
     def get_input(self, events):
         """Call this before the event loop."""
@@ -307,15 +343,15 @@ class InputBox:
         else:
             pass
 
-    def draw(self, text_color=(255, 255, 255), color=(64, 64, 64), border_color=(20, 95, 255), border_radius=5):
-        pygame.draw.rect(self.surf, color, (0, 0, self.collider.width, self.collider.height), border_radius=border_radius)
+    def draw(self):
+        pygame.draw.rect(self.surf, self.color, (0, 0, self.collider.width, self.collider.height), border_radius=self.border_radius)
         if self.focused:
-            pygame.draw.rect(self.surf, border_color, (0, 0, self.collider.width, self.collider.height), width=self.border, border_radius=border_radius)
+            pygame.draw.rect(self.surf, self.border_color, (0, 0, self.collider.width, self.collider.height), width=self.border, border_radius=self.border_radius)
         else:
             if self.value == '':
-                TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.placeholder_text, 'Arial', self.collider.height - 5, self.placeholder_color)
+                TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.placeholder_text, 'Arial', self.collider.height - 5, self.placeholder_color).draw()
 
-        TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.value, 'Arial', self.collider.height - 5, text_color)
+        TextRenderer(self.surf, self.collider.width/2, self.collider.height/2, self.value, 'Arial', self.collider.height - 5, self.text_color).draw()
         self.win.blit(self.surf, (self.collider.x, self.collider.y))
 
     def get_value(self):
@@ -377,7 +413,8 @@ class Card:
         self.win.blit(self.card_surf, (self.collider.x, self.collider.y))
 
 class Slider:
-    def __init__(self, pos: Vector2D, size: Vector2D, min_val: float, max_val: float, mid_color=(64, 64, 64), bar_color=(128, 128, 128), offset=Vector2D(0, 0)):
+    def __init__(self, win: pygame.Surface, pos: Vector2D, size: Vector2D, min_val: float, max_val: float, mid_color=(64, 64, 64), bar_color=(128, 128, 128), offset=Vector2D(0, 0)):
+        self.win = win
         self.pos = pos
         self.size = size
         self.min_val = min_val
@@ -385,10 +422,9 @@ class Slider:
         self.mid_color = mid_color
         self.bar_color = bar_color
         self.mid_val = 0.5 * max_val
-        self.offset = offset
         _mid_sl_bl_pos = self.pos.interpolate(self.size, 0.5)
-        self.mid_sl_bar = pygame.Rect(_mid_sl_bl_pos.x + self.offset.x, _mid_sl_bl_pos.y + self.offset.y, 10, self.size.y)
-        self.slider_rect = pygame.Rect(self.pos.x +  + self.offset.x, (self.pos.y +  + self.offset.y) - self.size.y/8, self.size.x, self.size.y/4)
+        self.mid_sl_bar = pygame.Rect(_mid_sl_bl_pos.x, _mid_sl_bl_pos.y, 10, self.size.y)
+        self.slider_rect = pygame.Rect(self.pos.x, (self.pos.y) - self.size.y/8, self.size.x, self.size.y/4)  # TODO Fix the positioning
 
     def _map_range(self):
         mapper = interp1d([self.pos.x, self.pos.x + self.size.x], [self.min_val, self.max_val], fill_value='extrapolate')
@@ -396,11 +432,11 @@ class Slider:
 
         return mapped_value
 
-    def update(self, ctx: Window):
-        mouse = ctx.get_mouse()
+    def update(self):
+        mouse = pygame.mouse.get_pos()
 
-        if self.mid_sl_bar.collidepoint(mouse.x, mouse.y) and pygame.mouse.get_pressed() == (True, False, False):
-            self.mid_sl_bar.x = mouse.x - self.mid_sl_bar.width / 2
+        if self.mid_sl_bar.collidepoint(mouse[0], mouse[1]) and pygame.mouse.get_pressed() == (True, False, False):
+            self.mid_sl_bar.x = mouse[0] - self.mid_sl_bar.width / 2
 
             if self.mid_sl_bar.x <= self.pos.x + self.size.x:
                 pass
@@ -420,40 +456,117 @@ class Slider:
     def get_val(self):
         return self.mid_val
 
-    def draw(self, win: pygame.Surface):
-        TextRenderer(win, self.slider_rect.x - self.offset.x, (self.slider_rect.y - self.offset.y) - 20, str(self.min_val), 'Arial', 10, (255, 255, 255))
-        TextRenderer(win, (self.slider_rect.x + self.size.x)  - self.offset.x, (self.slider_rect.y - self.offset.y) - 20, str(self.max_val), 'Arial', 10, (255, 255, 255))
-        TextRenderer(win, self.mid_sl_bar.x  - self.offset.x, (self.mid_sl_bar.y - self.offset.x) - 20, str(self.mid_val), 'Arial', 10, (255, 255, 255))
+    def draw(self):
+        TextRenderer(self.win, self.slider_rect.x, (self.slider_rect.y) - 20, str(self.min_val), 'Arial', 10, (255, 255, 255))
+        TextRenderer(self.win, (self.slider_rect.x + self.size.x) , (self.slider_rect.y) - 20, str(self.max_val), 'Arial', 10, (255, 255, 255))
+        TextRenderer(self.win, self.mid_sl_bar.x , (self.mid_sl_bar.y) - 20, str(self.mid_val), 'Arial', 10, (255, 255, 255))
 
-        pygame.draw.rect(win, self.bar_color, pygame.Rect(self.slider_rect.x - self.offset.x, self.slider_rect.y - self.offset.y, self.slider_rect.width, self.slider_rect.height))
-        pygame.draw.rect(win, self.mid_color, pygame.Rect(self.mid_sl_bar.x - self.offset.x, self.mid_sl_bar.y - self.offset.y, self.mid_sl_bar.width, self.mid_sl_bar.height))
+        pygame.draw.rect(self.win, self.bar_color, pygame.Rect(self.slider_rect.x, self.slider_rect.y, self.slider_rect.width, self.slider_rect.height))
+        pygame.draw.rect(self.win, self.mid_color, pygame.Rect(self.mid_sl_bar.x, self.mid_sl_bar.y, self.mid_sl_bar.width, self.mid_sl_bar.height))
 
 class CheckBox:
-    def __init__(self, pos: Vector2D, size: Vector2D, color=(255, 255, 255)):
+    def __init__(self, win: pygame.Surface, pos: Vector2D, size: Vector2D, color=(255, 255, 255), toggled=False):
+        self.win = win
         self.pos = pos
         self.size = size
         self.color = color
-        self.toggeled = False
+        self.toggeled = toggled
         self.checkbox_rect = pygame.Rect(self.pos.x, self.pos.y, self.size.x, self.size.y)
 
-    def update(self, ctx: Window):
-        # rework this
-        mouse = ctx.get_mouse()
-        if self.checkbox_rect.collidepoint(mouse.x, mouse.y):
-            if pygame.mouse.get_pressed() == (True, False, False):
-                if self.toggeled:
-                    self.toggeled = False
-                else:
-                    self.toggeled = True
+    def update(self, events):
+        mouse = pygame.mouse.get_pos()
 
-    def draw(self, win: pygame.Surface):
-        pygame.draw.rect(win, self.color, self.checkbox_rect, border_radius=int((self.size.x + self.size.y)/16))
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONUP:
+                if self.checkbox_rect.collidepoint(mouse[0], mouse[1]):
+
+                    if event.button == 1:
+                        if self.toggeled:
+                            self.toggeled = False
+                        else:
+                            self.toggeled = True
+
+    def draw(self):
+        pygame.draw.rect(self.win, self.color, self.checkbox_rect, border_radius=int((self.size.x + self.size.y)/16))
         if self.toggeled:
-            pygame.draw.circle(win, (255 - self.color[0], 255 - self.color[1], 255 - self.color[2]), (self.pos.x + self.size.x/2, self.pos.y + self.size.y/2), (self.size.x + self.size.y)/4)
+            pygame.draw.ellipse(self.win, (255 - self.color[0], 255 - self.color[1], 255 - self.color[2]), self.checkbox_rect)
 
     def get_val(self):
         return self.toggeled
 
+class JsonUiFile:
+    """Takes in a Json file in which all ui element are defined, then Parses it and updates/renders them.
+    NOTE: All x, y values are not dependent on screen size e.g. in your json file x=0.2 = 20% of screen width.(NOT FOR WIDTH/HEIGHT THO.)"""
+    def __init__(self, json_file: str, json_dict: Optional[dict] = None):
+        if json_dict is not None:
+            if json_dict != {}:
+                self.json_data = json_dict
+            else:
+                raise FileNotFoundError(f'Cant parse ui elements from empty dict: {json_dict}')
+        else:
+            if json_file != '' and path.isfile(json_file) and json_file.endswith('.json'):
+                with open(json_file) as json_data:
+                    self.json_data = json.load(json_data)
+            else:
+                raise FileNotFoundError(f'File either doesn\'t exists or is not a json file: {json_file}')
 
 
-SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card]
+        self.ui_elems = {}
+        self.supported_ui_elems = ['BUTTON', 'TEXTBOX', 'CHECKBOX', 'TEXT', 'SLIDER']
+
+    def load(self, win: pygame.Surface):
+        """Loads all elements into Memory."""
+        win_size = win.get_size()
+        for ui_elem in self.json_data.items():
+            ui_elem_data = ui_elem[1]
+            if ui_elem_data['TYPE'] in self. supported_ui_elems:
+                if ui_elem_data['TYPE'] == self.supported_ui_elems[0]:  # Button                                                                                                      # TODO Replace this with an actual image
+                    btn_tex = ui_elem_data['BACKGROUND'] if ui_elem_data['BACKGROUND'] != '' and path.isfile(ui_elem_data['BACKGROUND']) else '/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/SPRNVA/res/missing_texture.png'
+                    self.ui_elems[ui_elem[0]] = Button(win, win_size[0] * ui_elem_data['x'], win_size[1] * ui_elem_data['y'], ui_elem_data['WIDTH'], ui_elem_data['HEIGHT'], (0, 0, 0), img=btn_tex,
+                                                       text=ui_elem_data['TEXT'], font=ui_elem_data['FONT'], font_size=ui_elem_data['FONTSIZE'], high_precision_mode=True)
+
+                if ui_elem_data['TYPE'] == self.supported_ui_elems[1]:  # Textbox
+                    self.ui_elems[ui_elem[0]] = InputBox(win, Vector2D(win_size[0] * ui_elem_data['x'], win_size[1] * ui_elem_data['y']), Vector2D(ui_elem_data['WIDTH'], ui_elem_data['HEIGHT']),
+                                                                placeholder_text=ui_elem_data['PLACEHOLDER_TEXT'], color=(ui_elem_data['BGCOLOR'][0], ui_elem_data['BGCOLOR'][1], ui_elem_data['BGCOLOR'][2]),
+                                                                text_color=(ui_elem_data['TEXTCOLOR'][0], ui_elem_data['TEXTCOLOR'][1], ui_elem_data['TEXTCOLOR'][2]), border_radius=ui_elem_data['BORDERRADIUS'])
+
+                if ui_elem_data['TYPE'] == self.supported_ui_elems[2]:  # Checkbox
+                    self.ui_elems[ui_elem[0]] = CheckBox(win, Vector2D(win_size[0] * ui_elem_data['x'], win_size[1] * ui_elem_data['y']),
+                                                                Vector2D(ui_elem_data['WIDTH'], ui_elem_data['HEIGHT']),
+                                                                color=(ui_elem_data['COLOR'][0], ui_elem_data['COLOR'][1], ui_elem_data['COLOR'][2]),
+                                                                toggled=ui_elem_data['INITVALUE'])
+
+                if ui_elem_data['TYPE'] == self.supported_ui_elems[3]:  # Text
+                    av_font = pygame.font.get_fonts()
+                    if ui_elem_data['FONT'].lower() in av_font:
+                        self.ui_elems[ui_elem[0]] = TextRenderer(win, win_size[0] * ui_elem_data['x'], win_size[1] * ui_elem_data['y'], ui_elem_data['TEXT'], ui_elem_data['FONT'], ui_elem_data['SIZE'], ui_elem_data['COLOR'])
+                    else:
+                        self.ui_elems[ui_elem[0]] = TextRenderer(win, win_size[0] * ui_elem_data['x'], win_size[1] * ui_elem_data['y'], ui_elem_data['TEXT'], ui_elem_data['FONT'], ui_elem_data['SIZE'], ui_elem_data['COLOR'], font_file=True)
+
+                if ui_elem_data['TYPE'] == self.supported_ui_elems[4]:  # Slider
+                    self.ui_elems[ui_elem[0]] = Slider(win, Vector2D(win_size[0] * ui_elem_data['x'], win_size[1] * ui_elem_data['y']),
+                                                              Vector2D(ui_elem_data['WIDTH'], ui_elem_data['HEIGHT']), ui_elem_data['MINVAL'],
+                                                              ui_elem_data['MAXVAL'], ui_elem_data['BARCOLOR'], ui_elem_data['COLOR'])
+
+    def update_elems(self, events: list):
+        """Updates all elements."""
+        for ui_elem in self.ui_elems.items():
+            try:
+                ui_elem[1].update()
+            except Exception:  # TODO find out which exception type is raised
+                try:
+                    ui_elem[1].update(events)
+                except Exception:
+                    pass
+
+    def draw_elems(self):
+        """Draws all Elements."""
+        for ui_elem in self.ui_elems.items():
+            ui_elem[1].draw()
+
+    def get_elem_by_key(self, key: str):
+        """Returns ui object."""
+        return self.ui_elems[key]
+
+
+SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card, Slider]
