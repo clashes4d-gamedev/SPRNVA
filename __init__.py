@@ -1,3 +1,4 @@
+from pygame.constants import *
 from .ui import *
 from .vector import *
 from .curves import *
@@ -14,3 +15,4 @@ from .encryption import *
 from .networking import *
 from .grid import *
 from .verlet import *
+from .animation import *

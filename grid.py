@@ -16,7 +16,7 @@ class Tile:
         self.width = width
         self.height = height
         self.color = color
-        self.img = pygame.image.load(self._import_img(img)).convert_alpha() if img != '' else None
+        self.img = pygame.image.load(self._import_img(img)).convert_alpha() if img != '' else pygame.image.load(path.join(path.split(__file__)[0], path.join('res', 'missing_texture.png'))).convert_alpha()
         self.collider = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def _import_img(self, img: str):

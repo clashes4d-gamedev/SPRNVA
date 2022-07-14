@@ -1,4 +1,4 @@
-from os import environ
+from os import environ, path
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from .vector import Vector2D
@@ -32,7 +32,9 @@ class Player:
         self.total_health = self._base_health + self._base_shield
         self.collider = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surf = pygame.Surface((self.collider.width, self.collider.height))
-        self.img = pygame.image.load(img).convert_alpha() if img != '' else img
+        self.img = pygame.image.load(img).convert_alpha() if img != '' else path.join(path.split(__file__)[0], path.join('res', 'missing_texture.png'))
+        self.loaded_img = pygame.image.load(self.img).convert_alpha()
+        self.loaded_img = pygame.transform.scale(self.loaded_img, (self.collider.width, self.collider.height))
 
     def draw_player_health(self, x, y, width, height, health_color=(171, 21, 21), vertical=False, border=False, border_radius=0, vignette=False):
         health = self.health/100
@@ -46,16 +48,6 @@ class Player:
                 pygame.draw.rect(self.win, health_color, pygame.Rect(x - (width * health)/2, y, width * health, height), border_radius=border_radius)
                 if border:
                     pygame.draw.rect(self.win, health_color, pygame.Rect(x - width/2, y, width, height), width=1, border_radius=border_radius)
-                # if vignette:
-                #     if self.health <= self.health/2:
-                #         h_vig_offset = 50
-                #         print('adding vignette')
-                #         #win: pygame.Surface, offset: int, color: tuple, alpha: int
-                #         add_vignette(self.win, 0, 0, h_vig_offset, health_color, 50)
-                #     else:
-                #         if h_vig_offset <= 100:
-                #             h_vig_offset += 0.005
-                #             add_vignette(self.win, 0, 0, h_vig_offset, health_color, 50)
                     
         else:
             if vertical:
@@ -135,7 +127,7 @@ class Player:
         if self.img == '':
             self.surf.fill(self.color)
         else:
-            self.surf.blit(self.img, (0, 0))
+            self.surf.blit(self.loaded_img, (0, 0))
         self.win.blit(self.surf, (self.collider.x, self.collider.y))
 
     def check_collisions(self, tiles):

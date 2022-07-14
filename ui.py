@@ -129,6 +129,9 @@ class Window:
     def get_events(self):
         return pygame.event.get()
 
+    def get_missing_texture_path(self):
+        return path.join(path.split(__file__)[0], path.join('res', 'missing_texture.png'))
+
 class TextRenderer:
     def __init__(self, win: pygame.Surface, x: float, y: float, text: str, font: str, size: int, color: tuple, font_file=False, centered=True):
         self.win = win
@@ -457,9 +460,9 @@ class Slider:
         return self.mid_val
 
     def draw(self):
-        TextRenderer(self.win, self.slider_rect.x, (self.slider_rect.y) - 20, str(self.min_val), 'Arial', 10, (255, 255, 255))
-        TextRenderer(self.win, (self.slider_rect.x + self.size.x) , (self.slider_rect.y) - 20, str(self.max_val), 'Arial', 10, (255, 255, 255))
-        TextRenderer(self.win, self.mid_sl_bar.x , (self.mid_sl_bar.y) - 20, str(self.mid_val), 'Arial', 10, (255, 255, 255))
+        TextRenderer(self.win, self.slider_rect.x, (self.slider_rect.y) - 20, str(self.min_val), 'Arial', 10, (255, 255, 255)).draw()
+        TextRenderer(self.win, (self.slider_rect.x + self.size.x) , (self.slider_rect.y) - 20, str(self.max_val), 'Arial', 10, (255, 255, 255)).draw()
+        TextRenderer(self.win, self.mid_sl_bar.x , (self.mid_sl_bar.y) - 20, str(self.mid_val), 'Arial', 10, (255, 255, 255)).draw()
 
         pygame.draw.rect(self.win, self.bar_color, pygame.Rect(self.slider_rect.x, self.slider_rect.y, self.slider_rect.width, self.slider_rect.height))
         pygame.draw.rect(self.win, self.mid_color, pygame.Rect(self.mid_sl_bar.x, self.mid_sl_bar.y, self.mid_sl_bar.width, self.mid_sl_bar.height))
@@ -567,6 +570,5 @@ class JsonUiFile:
     def get_elem_by_key(self, key: str):
         """Returns ui object."""
         return self.ui_elems[key]
-
 
 SUPPORTED_UI_TYPES = [TextRenderer, Button, SubMenu, InputBox, Card, Slider]
