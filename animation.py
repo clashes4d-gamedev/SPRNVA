@@ -34,4 +34,16 @@ class GifPlayer:
         else:
             self.frame_index = 0
 
-        self.frame_index += 1 * (playback_speed * dt)
+        self.frame_index += (playback_speed * dt)
+
+    def play_from_to(self, start: int, end: int, dt: float, playback_speed: float):
+        start = start if start >= 0 else 0
+        end = end if end <= self.num_frames else self.num_frames
+
+        self.frame_index = start
+        if int(self.frame_index) < end:
+            self.win.blit(self.frames[int(self.frame_index)], self.pos)
+        else:
+            self.frame_index = start
+
+        self.frame_index += (playback_speed * dt)

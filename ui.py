@@ -197,6 +197,7 @@ class Button:
 
     def draw(self):
         """Draws the Button on a Surface."""
+        # TODO known issues: mac specific: -mouse hover counts sometimes as mouse click
         button_surf = pygame.Surface((self.collider.width, self.collider.height))
 
         if self.img == '':
