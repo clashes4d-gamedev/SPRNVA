@@ -14,6 +14,10 @@ class Vector2D:
         self.magnitude = self._length()
         self.direction = self._direction()
 
+    def __repr__(self):
+        rep = f'Vector2D(x:{self.x}, y:{self.y}, magnitude: {self.magnitude}, direction: {self.direction})'
+        return rep
+
     def __add__(self, other):
         if isinstance(other, self.__class__):
             return Vector2D(self.x + other.x, self.y + other.y)
