@@ -17,4 +17,5 @@ from .grid import *
 from .verlet import *
 from .animation import *
 from .tilemap import *
+from .pcg import *
 missing_texture = pygame.image.load(path.join(path.split(__file__)[0], path.join('res', 'missing_texture.png')))

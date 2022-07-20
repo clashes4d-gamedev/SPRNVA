@@ -2,13 +2,13 @@ from os import path
 from typing import Optional
 
 class BinaryTree:
-    def __init__(self, data: tuple[int or float, any], layer: int = 0):
+    def __init__(self, data: tuple[int, any], layer: int = 0):
         self.left = None
         self.right = None
         self.data = data
         self.layer = layer
 
-    def add_node(self, data: tuple[int or float, any]):
+    def add_node(self, data: tuple[int, any]):
         if self.data[0]:
             if data[0] < self.data[0]:
                 if self.left is None:
@@ -31,8 +31,15 @@ class BinaryTree:
         if self.right:
             self.right.show()
 
-    def walk(self):
-        pass
+    def search(self, node, key: int):
+        if node.left == None and node.right == None or key == node.data[0]:
+            return node
+
+        if key < node.data[0]:
+            return self.search(node.left, key)
+
+        if key > node.data[0]:
+            return self.search(node.right, key)
 
 
 class CheckPath:
