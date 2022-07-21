@@ -15,7 +15,7 @@ class Vector2D:
         self.direction = self._direction()
 
     def __repr__(self):
-        rep = f'Vector2D(x:{self.x}, y:{self.y}, magnitude: {self.magnitude}, direction: {self.direction})'
+        rep = f'Vector2D(x:{self.x}, y:{self.y})'
         return rep
 
     def __add__(self, other):
@@ -170,7 +170,7 @@ class Vector2D:
 
     def dist(self, vec2):
         """Returns the Distance between current Vector and given Vector."""
-        return ((vec2.y - self.x)**2 + (vec2.y - self.y)**2)**(1/2)
+        return ((vec2.x - self.x)**2 + (vec2.y - self.y)**2)**(1/2)
 
     def to_tuple(self):
         """Returns tuple representation of Vector."""
